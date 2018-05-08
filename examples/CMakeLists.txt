@@ -1,3 +1,4 @@
+set(OpenCV_DIR "/home/leejohnnie/tools/OpenCV-android-sdk/sdk/native/jni")
 
 find_package(OpenCV QUIET COMPONENTS core highgui imgproc imgcodecs)
 if(NOT OpenCV_FOUND)
