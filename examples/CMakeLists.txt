@@ -14,4 +14,7 @@ target_link_libraries(squeezenet ncnn ${OpenCV_LIBS})
 add_executable(fasterrcnn fasterrcnn.cpp)
 target_link_libraries(fasterrcnn ncnn ${OpenCV_LIBS})
 
+add_executable(mobilenet mobilenet.cpp)
+target_link_libraries(mobilenet ncnn ${OpenCV_LIBS})
+
 add_subdirectory(ssd)
