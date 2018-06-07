@@ -33,13 +33,28 @@ public:
         const char* const _key;
     public:
         AttrProxy( MXNetNode const* n, const char* key ) : _n(n), _key(key) {}
-        operator int() const { return _n->attr_i(_key); }
-        operator float() const { return _n->attr_f(_key); }
-        operator std::string() const { return _n->attr_s(_key); }
-        operator std::vector<int>() const { return _n->attr_ai(_key); }
+        operator int() const
+        {
+            return _n->attr_i(_key);
+        }
+        operator float() const
+        {
+            return _n->attr_f(_key);
+        }
+        operator std::string() const
+        {
+            return _n->attr_s(_key);
+        }
+        operator std::vector<int>() const
+        {
+            return _n->attr_ai(_key);
+        }
     };
 
-    AttrProxy attr(const char* key) const { return AttrProxy(this, key); }
+    AttrProxy attr(const char* key) const
+    {
+        return AttrProxy(this, key);
+    }
 
     int attr_i(const char* key) const;
     float attr_f(const char* key) const;
@@ -812,9 +827,12 @@ int main(int argc, char** argv)
         else if (n.op == "Convolution")
         {
             int num_group = n.attr("num_group");
-            if (num_group > 1) {
+            if (num_group > 1)
+            {
                 fprintf(pp, "%-16s", "ConvolutionDepthWise");
-            } else {
+            }
+            else
+            {
                 fprintf(pp, "%-16s", "Convolution");
             }
         }
@@ -825,9 +843,12 @@ int main(int argc, char** argv)
         else if (n.op == "Deconvolution")
         {
             int num_group = n.attr("num_group");
-            if (num_group > 1) {
+            if (num_group > 1)
+            {
                 fprintf(pp, "%-16s", "DeconvolutionDepthWise");
-            } else {
+            }
+            else
+            {
                 fprintf(pp, "%-16s", "Deconvolution");
             }
         }
@@ -1093,7 +1114,8 @@ int main(int argc, char** argv)
         else if (n.op == "BatchNorm")
         {
             float eps = 1e-3;
-            if (n.has_attr("eps")) {
+            if (n.has_attr("eps"))
+            {
                 eps = n.attr("eps");
             }
 
@@ -1168,37 +1190,50 @@ int main(int argc, char** argv)
             std::vector<float> bias_data = n.weight(1);
 
             fprintf(pp, " 0=%d", num_filter);
-            if (kernel.size() == 1) {
+            if (kernel.size() == 1)
+            {
                 fprintf(pp, " 1=%d", kernel[0]);
-            } else if (kernel.size() == 2) {
+            }
+            else if (kernel.size() == 2)
+            {
                 fprintf(pp, " 1=%d", kernel[1]);
                 fprintf(pp, " 11=%d", kernel[0]);
             }
 
-            if (dilate.size() == 1) {
+            if (dilate.size() == 1)
+            {
                 fprintf(pp, " 2=%d", dilate[0]);
-            } else if (dilate.size() == 2) {
+            }
+            else if (dilate.size() == 2)
+            {
                 fprintf(pp, " 2=%d", dilate[1]);
                 fprintf(pp, " 12=%d", dilate[0]);
             }
 
-            if (stride.size() == 1) {
+            if (stride.size() == 1)
+            {
                 fprintf(pp, " 3=%d", stride[0]);
-            } else if (stride.size() == 2) {
+            }
+            else if (stride.size() == 2)
+            {
                 fprintf(pp, " 3=%d", stride[1]);
                 fprintf(pp, " 13=%d", stride[0]);
             }
 
-            if (pad.size() == 1) {
+            if (pad.size() == 1)
+            {
                 fprintf(pp, " 4=%d", pad[0]);
-            } else if (pad.size() == 2) {
+            }
+            else if (pad.size() == 2)
+            {
                 fprintf(pp, " 4=%d", pad[1]);
                 fprintf(pp, " 14=%d", pad[0]);
             }
 
             fprintf(pp, " 5=%d", no_bias == 1 ? 0 : 1);
             fprintf(pp, " 6=%d", (int)weight_data.size());
-            if (num_group > 1) {
+            if (num_group > 1)
+            {
                 fprintf(pp, " 7=%d", num_group);
             }
 
@@ -1221,37 +1256,50 @@ int main(int argc, char** argv)
             std::vector<float> bias_data = n.weight(1);
 
             fprintf(pp, " 0=%d", num_filter);
-            if (kernel.size() == 1) {
+            if (kernel.size() == 1)
+            {
                 fprintf(pp, " 1=%d", kernel[0]);
-            } else if (kernel.size() == 2) {
+            }
+            else if (kernel.size() == 2)
+            {
                 fprintf(pp, " 1=%d", kernel[1]);
                 fprintf(pp, " 11=%d", kernel[0]);
             }
 
-            if (dilate.size() == 1) {
+            if (dilate.size() == 1)
+            {
                 fprintf(pp, " 2=%d", dilate[0]);
-            } else if (dilate.size() == 2) {
+            }
+            else if (dilate.size() == 2)
+            {
                 fprintf(pp, " 2=%d", dilate[1]);
                 fprintf(pp, " 12=%d", dilate[0]);
             }
 
-            if (stride.size() == 1) {
+            if (stride.size() == 1)
+            {
                 fprintf(pp, " 3=%d", stride[0]);
-            } else if (stride.size() == 2) {
+            }
+            else if (stride.size() == 2)
+            {
                 fprintf(pp, " 3=%d", stride[1]);
                 fprintf(pp, " 13=%d", stride[0]);
             }
 
-            if (pad.size() == 1) {
+            if (pad.size() == 1)
+            {
                 fprintf(pp, " 4=%d", pad[0]);
-            } else if (pad.size() == 2) {
+            }
+            else if (pad.size() == 2)
+            {
                 fprintf(pp, " 4=%d", pad[1]);
                 fprintf(pp, " 14=%d", pad[0]);
             }
 
             fprintf(pp, " 5=%d", no_bias == 1 ? 0 : 1);
             fprintf(pp, " 6=%d", (int)weight_data.size());
-            if (num_group > 1) {
+            if (num_group > 1)
+            {
                 fprintf(pp, " 7=%d", num_group);
             }
 
@@ -1518,18 +1566,27 @@ int main(int argc, char** argv)
         {
             std::vector<int> shape = n.attr("shape");
 
-            if (shape.size() == 1) {
+            if (shape.size() == 1)
+            {
                 fprintf(pp, " 0=%d", shape[0]);// should never reach here
-            } else if (shape.size() == 2) {
+            }
+            else if (shape.size() == 2)
+            {
                 fprintf(pp, " 0=%d", shape[1]);
-            } else if (shape.size() == 3) {
+            }
+            else if (shape.size() == 3)
+            {
                 fprintf(pp, " 0=%d", shape[2]);
                 fprintf(pp, " 1=%d", shape[1]);
-            } else if (shape.size() == 4) {
+            }
+            else if (shape.size() == 4)
+            {
                 fprintf(pp, " 0=%d", shape[3]);
                 fprintf(pp, " 1=%d", shape[2]);
                 fprintf(pp, " 2=%d", shape[1]);
-            } else if (shape.size() == 5) {
+            }
+            else if (shape.size() == 5)
+            {
                 fprintf(pp, " 0=%d", shape[4] * shape[3]);
                 fprintf(pp, " 1=%d", shape[2]);
                 fprintf(pp, " 2=%d", shape[1]);
@@ -1581,7 +1638,8 @@ int main(int argc, char** argv)
         {
             std::vector<int> axes = n.attr("axes");
 
-            if (axes.size() == 4) {
+            if (axes.size() == 4)
+            {
                 if (axes[1] == 1 && axes[2] == 2 && axes[3] == 3)
                     fprintf(pp, " 0=0");// w h c
                 else if (axes[1] == 1 && axes[2] == 3 && axes[3] == 2)
@@ -1594,7 +1652,9 @@ int main(int argc, char** argv)
                     fprintf(pp, " 0=4");// h c w
                 else if (axes[1] == 3 && axes[2] == 2 && axes[3] == 1)
                     fprintf(pp, " 0=5");// c h w
-            } else if (axes.size() == 5) {
+            }
+            else if (axes.size() == 5)
+            {
                 if (axes[1] == 1 && axes[2] == 2 && axes[3] == 3 && axes[4] == 4)
                     fprintf(pp, " 0=0");// wx h c
                 else if (axes[1] == 1 && axes[2] == 3 && axes[3] == 4 && axes[4] == 2)

@@ -17,7 +17,8 @@
 
 #include "batchnorm.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class BatchNorm_arm : public BatchNorm
 {

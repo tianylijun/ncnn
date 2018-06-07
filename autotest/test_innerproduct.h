@@ -18,22 +18,26 @@ TEST(innerproduct, forward)
 
 
     // input & output
-    float_t in[] = {
+    float_t in[] =
+    {
         0.0f, 1.0f, 2.0f, 3.0f
     };
 
-    float_t expected_out[] = {
+    float_t expected_out[] =
+    {
         6.5, 6.5  /// 0+1+2+3+0.5
     };
 
 
     // weights & bias
-    float_t w[] = {
+    float_t w[] =
+    {
         1.0f, 1.0f, 1.0f, 1.0f,
         1.0f, 1.0f, 1.0f, 1.0f
     };
 
-    float_t b[] = {
+    float_t b[] =
+    {
         0.5f, 0.5f
     };
 

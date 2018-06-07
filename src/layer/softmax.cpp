@@ -17,7 +17,8 @@
 #include <math.h>
 #include <algorithm>
 
-namespace ncnn {
+namespace ncnn
+{
 
 DEFINE_LAYER_CREATOR(Softmax)
 

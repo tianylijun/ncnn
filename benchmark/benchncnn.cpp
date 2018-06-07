@@ -11,13 +11,17 @@
 #include "cpu.h"
 #include "net.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 // always return empty weights
 class ModelBinFromEmpty : public ModelBin
 {
 public:
-    virtual Mat load(int w, int /*type*/) const { return Mat(w); }
+    virtual Mat load(int w, int /*type*/) const
+    {
+        return Mat(w);
+    }
 };
 
 class BenchNet : public Net

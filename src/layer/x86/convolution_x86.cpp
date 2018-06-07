@@ -14,7 +14,8 @@
 
 #include "convolution_x86.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 #include "convolution_1x1.h"
 #include "convolution_3x3.h"
@@ -207,7 +208,8 @@ int Convolution_x86::forward(const Mat& bottom_blob, Mat& top_blob) const
         return Convolution::forward(bottom_blob, top_blob);
     }
 
-    if (dilation_w != 1) {
+    if (dilation_w != 1)
+    {
         return forwardDilation(bottom_blob, top_blob, conv);
     }
 

@@ -22,7 +22,8 @@
 #include "mat.h"
 #include "platform.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class Extractor;
 class Net

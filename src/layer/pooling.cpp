@@ -16,7 +16,8 @@
 #include <float.h>
 #include <algorithm>
 
-namespace ncnn {
+namespace ncnn
+{
 
 DEFINE_LAYER_CREATOR(Pooling)
 

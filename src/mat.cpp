@@ -20,7 +20,8 @@
 
 #include "cpu.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 void Mat::substract_mean_normalize(const float* mean_vals, const float* norm_vals)
 {
@@ -46,42 +47,42 @@ void Mat::substract_mean_normalize(const float* mean_vals, const float* norm_val
 #if __aarch64__
             if (nn > 0)
             {
-            asm volatile(
-                "dup        v1.4s, %w4            \n"
-                "0:                               \n"
-                "prfm       pldl1keep, [%1, #128] \n"
-                "ld1        {v0.4s}, [%1]         \n"
-                "fsub       v0.4s, v0.4s, v1.4s   \n"
-                "subs       %w0, %w0, #1          \n"
-                "st1        {v0.4s}, [%1], #16    \n"
-                "bne        0b                    \n"
-                : "=r"(nn),     // %0
-                  "=r"(ptr)     // %1
-                : "0"(nn),
-                  "1"(ptr),
-                  "r"(mean)     // %4
-                : "cc", "memory", "v0", "v1"
-            );
+                asm volatile(
+                    "dup        v1.4s, %w4            \n"
+                    "0:                               \n"
+                    "prfm       pldl1keep, [%1, #128] \n"
+                    "ld1        {v0.4s}, [%1]         \n"
+                    "fsub       v0.4s, v0.4s, v1.4s   \n"
+                    "subs       %w0, %w0, #1          \n"
+                    "st1        {v0.4s}, [%1], #16    \n"
+                    "bne        0b                    \n"
+                    : "=r"(nn),     // %0
+                    "=r"(ptr)     // %1
+                    : "0"(nn),
+                    "1"(ptr),
+                    "r"(mean)     // %4
+                    : "cc", "memory", "v0", "v1"
+                );
             }
 #else
             if (nn > 0)
             {
-            asm volatile(
-                "vdup.f32   q1, %4              \n"
-                "0:                             \n"
-                "pld        [%1, #128]          \n"
-                "vld1.f32   {d0-d1}, [%1 :128]  \n"
-                "vsub.f32   q0, q0, q1          \n"
-                "subs       %0, #1              \n"
-                "vst1.f32   {d0-d1}, [%1 :128]! \n"
-                "bne        0b                  \n"
-                : "=r"(nn),     // %0
-                  "=r"(ptr)     // %1
-                : "0"(nn),
-                  "1"(ptr),
-                  "r"(mean)     // %4
-                : "cc", "memory", "q0", "q1"
-            );
+                asm volatile(
+                    "vdup.f32   q1, %4              \n"
+                    "0:                             \n"
+                    "pld        [%1, #128]          \n"
+                    "vld1.f32   {d0-d1}, [%1 :128]  \n"
+                    "vsub.f32   q0, q0, q1          \n"
+                    "subs       %0, #1              \n"
+                    "vst1.f32   {d0-d1}, [%1 :128]! \n"
+                    "bne        0b                  \n"
+                    : "=r"(nn),     // %0
+                    "=r"(ptr)     // %1
+                    : "0"(nn),
+                    "1"(ptr),
+                    "r"(mean)     // %4
+                    : "cc", "memory", "q0", "q1"
+                );
             }
 #endif // __aarch64__
 #endif // __ARM_NEON
@@ -112,42 +113,42 @@ void Mat::substract_mean_normalize(const float* mean_vals, const float* norm_val
 #if __aarch64__
             if (nn > 0)
             {
-            asm volatile(
-                "dup        v1.4s, %w4            \n"
-                "0:                               \n"
-                "prfm       pldl1keep, [%1, #128] \n"
-                "ld1        {v0.4s}, [%1]         \n"
-                "fmul       v0.4s, v0.4s, v1.4s   \n"
-                "subs       %w0, %w0, #1          \n"
-                "st1        {v0.4s}, [%1], #16    \n"
-                "bne        0b                    \n"
-                : "=r"(nn),     // %0
-                  "=r"(ptr)     // %1
-                : "0"(nn),
-                  "1"(ptr),
-                  "r"(norm)     // %4
-                : "cc", "memory", "v0", "v1"
-            );
+                asm volatile(
+                    "dup        v1.4s, %w4            \n"
+                    "0:                               \n"
+                    "prfm       pldl1keep, [%1, #128] \n"
+                    "ld1        {v0.4s}, [%1]         \n"
+                    "fmul       v0.4s, v0.4s, v1.4s   \n"
+                    "subs       %w0, %w0, #1          \n"
+                    "st1        {v0.4s}, [%1], #16    \n"
+                    "bne        0b                    \n"
+                    : "=r"(nn),     // %0
+                    "=r"(ptr)     // %1
+                    : "0"(nn),
+                    "1"(ptr),
+                    "r"(norm)     // %4
+                    : "cc", "memory", "v0", "v1"
+                );
             }
 #else
             if (nn > 0)
             {
-            asm volatile(
-                "vdup.f32   q1, %4              \n"
-                "0:                             \n"
-                "pld        [%1, #128]          \n"
-                "vld1.f32   {d0-d1}, [%1 :128]  \n"
-                "vmul.f32   q0, q0, q1          \n"
-                "subs       %0, #1              \n"
-                "vst1.f32   {d0-d1}, [%1 :128]! \n"
-                "bne        0b                  \n"
-                : "=r"(nn),     // %0
-                  "=r"(ptr)     // %1
-                : "0"(nn),
-                  "1"(ptr),
-                  "r"(norm)     // %4
-                : "cc", "memory", "q0", "q1"
-            );
+                asm volatile(
+                    "vdup.f32   q1, %4              \n"
+                    "0:                             \n"
+                    "pld        [%1, #128]          \n"
+                    "vld1.f32   {d0-d1}, [%1 :128]  \n"
+                    "vmul.f32   q0, q0, q1          \n"
+                    "subs       %0, #1              \n"
+                    "vst1.f32   {d0-d1}, [%1 :128]! \n"
+                    "bne        0b                  \n"
+                    : "=r"(nn),     // %0
+                    "=r"(ptr)     // %1
+                    : "0"(nn),
+                    "1"(ptr),
+                    "r"(norm)     // %4
+                    : "cc", "memory", "q0", "q1"
+                );
             }
 #endif // __aarch64__
 #endif // __ARM_NEON
@@ -179,48 +180,48 @@ void Mat::substract_mean_normalize(const float* mean_vals, const float* norm_val
 #if __aarch64__
             if (nn > 0)
             {
-            asm volatile(
-                "dup        v1.4s, %w4            \n"
-                "dup        v2.4s, %w5            \n"
-                "0:                               \n"
-                "prfm       pldl1keep, [%1, #128] \n"
-                "ld1        {v0.4s}, [%1]         \n"
-                "fsub       v0.4s, v0.4s, v1.4s   \n"
-                "fmul       v0.4s, v0.4s, v2.4s   \n"
-                "subs       %w0, %w0, #1          \n"
-                "st1        {v0.4s}, [%1], #16    \n"
-                "bne        0b                    \n"
-                : "=r"(nn),     // %0
-                  "=r"(ptr)     // %1
-                : "0"(nn),
-                  "1"(ptr),
-                  "r"(mean),    // %4
-                  "r"(norm)     // %5
-                : "cc", "memory", "v0", "v1", "v2"
-            );  
+                asm volatile(
+                    "dup        v1.4s, %w4            \n"
+                    "dup        v2.4s, %w5            \n"
+                    "0:                               \n"
+                    "prfm       pldl1keep, [%1, #128] \n"
+                    "ld1        {v0.4s}, [%1]         \n"
+                    "fsub       v0.4s, v0.4s, v1.4s   \n"
+                    "fmul       v0.4s, v0.4s, v2.4s   \n"
+                    "subs       %w0, %w0, #1          \n"
+                    "st1        {v0.4s}, [%1], #16    \n"
+                    "bne        0b                    \n"
+                    : "=r"(nn),     // %0
+                    "=r"(ptr)     // %1
+                    : "0"(nn),
+                    "1"(ptr),
+                    "r"(mean),    // %4
+                    "r"(norm)     // %5
+                    : "cc", "memory", "v0", "v1", "v2"
+                );
             }
 #else
             if (nn > 0)
             {
-            asm volatile(
-                "vdup.f32   q1, %4              \n"
-                "vdup.f32   q2, %5              \n"
-                "0:                             \n"
-                "pld        [%1, #128]          \n"
-                "vld1.f32   {d0-d1}, [%1 :128]  \n"
-                "vsub.f32   q0, q0, q1          \n"
-                "vmul.f32   q0, q0, q2          \n"
-                "subs       %0, #1              \n"
-                "vst1.f32   {d0-d1}, [%1 :128]! \n"
-                "bne        0b                  \n"
-                : "=r"(nn),     // %0
-                  "=r"(ptr)     // %1
-                : "0"(nn),
-                  "1"(ptr),
-                  "r"(mean),    // %4
-                  "r"(norm)     // %5
-                : "cc", "memory", "q0", "q1", "q2"
-            );
+                asm volatile(
+                    "vdup.f32   q1, %4              \n"
+                    "vdup.f32   q2, %5              \n"
+                    "0:                             \n"
+                    "pld        [%1, #128]          \n"
+                    "vld1.f32   {d0-d1}, [%1 :128]  \n"
+                    "vsub.f32   q0, q0, q1          \n"
+                    "vmul.f32   q0, q0, q2          \n"
+                    "subs       %0, #1              \n"
+                    "vst1.f32   {d0-d1}, [%1 :128]! \n"
+                    "bne        0b                  \n"
+                    : "=r"(nn),     // %0
+                    "=r"(ptr)     // %1
+                    : "0"(nn),
+                    "1"(ptr),
+                    "r"(mean),    // %4
+                    "r"(norm)     // %5
+                    : "cc", "memory", "q0", "q1", "q2"
+                );
             }
 #endif // __aarch64__
 #endif // __ARM_NEON
@@ -304,41 +305,41 @@ Mat Mat::from_float16(const unsigned short* data, int size)
 #if __aarch64__
     if (nn > 0)
     {
-    asm volatile(
-        "0:                             \n"
-        "ld1    {v0.4h}, [%1], #8       \n"
-        "fcvtl  v1.4s, v0.4h            \n"
-        "subs   %w0, %w0, #1            \n"
-        "st1    {v1.4s}, [%2], #16      \n"
-        "bne    0b                      \n"
-        : "=r"(nn),     // %0
-          "=r"(data),   // %1
-          "=r"(ptr)     // %2
-        : "0"(nn),
-          "1"(data),
-          "2"(ptr)
-        : "cc", "memory", "v0", "v1"
-    );
+        asm volatile(
+            "0:                             \n"
+            "ld1    {v0.4h}, [%1], #8       \n"
+            "fcvtl  v1.4s, v0.4h            \n"
+            "subs   %w0, %w0, #1            \n"
+            "st1    {v1.4s}, [%2], #16      \n"
+            "bne    0b                      \n"
+            : "=r"(nn),     // %0
+            "=r"(data),   // %1
+            "=r"(ptr)     // %2
+            : "0"(nn),
+            "1"(data),
+            "2"(ptr)
+            : "cc", "memory", "v0", "v1"
+        );
     }
 #else
     if (nn > 0)
     {
-    asm volatile(
-        "0:                             \n"
-        "pld        [%1, #64]           \n"
-        "vld1.s16   {d0}, [%1 :64]!     \n"
-        "vcvt.f32.f16 q1, d0            \n"
-        "subs       %0, #1              \n"
-        "vst1.f32   {d2-d3}, [%2 :128]! \n"
-        "bne        0b                  \n"
-        : "=r"(nn),     // %0
-          "=r"(data),   // %1
-          "=r"(ptr)     // %2
-        : "0"(nn),
-          "1"(data),
-          "2"(ptr)
-        : "cc", "memory", "q0", "q1"
-    );
+        asm volatile(
+            "0:                             \n"
+            "pld        [%1, #64]           \n"
+            "vld1.s16   {d0}, [%1 :64]!     \n"
+            "vcvt.f32.f16 q1, d0            \n"
+            "subs       %0, #1              \n"
+            "vst1.f32   {d2-d3}, [%2 :128]! \n"
+            "bne        0b                  \n"
+            : "=r"(nn),     // %0
+            "=r"(data),   // %1
+            "=r"(ptr)     // %2
+            : "0"(nn),
+            "1"(data),
+            "2"(ptr)
+            : "cc", "memory", "q0", "q1"
+        );
     }
 #endif // __aarch64__
 #endif // __ARM_NEON

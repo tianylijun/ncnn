@@ -115,13 +115,15 @@ static int quantize_weight(float *data, size_t data_length, std::vector<unsigned
     return 0x01306B47;
 }
 
-static bool quantize_weight(float *data, size_t data_length, int quantize_level, std::vector<float> &quantize_table, std::vector<unsigned char> &quantize_index) {
+static bool quantize_weight(float *data, size_t data_length, int quantize_level, std::vector<float> &quantize_table, std::vector<unsigned char> &quantize_index)
+{
 
     assert(quantize_level != 0);
     assert(data != NULL);
     assert(data_length > 0);
 
-    if (data_length < static_cast<size_t>(quantize_level)) {
+    if (data_length < static_cast<size_t>(quantize_level))
+    {
         fprintf(stderr, "No need quantize,because: data_length < quantize_level");
         return false;
     }
@@ -219,7 +221,8 @@ int main(int argc, char** argv)
     const char* quantize_param = argc == 6 ? argv[5] : "0";
     int quantize_level = atoi(quantize_param);
 
-    if (quantize_level != 0 && quantize_level != 256 && quantize_level != 65536) {
+    if (quantize_level != 0 && quantize_level != 256 && quantize_level != 65536)
+    {
         fprintf(stderr, "%s: only support quantize level = 0, 256, or 65536", argv[0]);
         return -1;
     }
@@ -524,11 +527,11 @@ int main(int argc, char** argv)
                 {
                     if (quantize_level == 256)
                     {
-                    quantize_tag = quantize_weight((float *)blob.data().data(), blob.data_size(), quantize_level, quantize_table, quantize_index);
+                        quantize_tag = quantize_weight((float *)blob.data().data(), blob.data_size(), quantize_level, quantize_table, quantize_index);
                     }
                     else if (quantize_level == 65536)
                     {
-                    quantize_tag = quantize_weight((float *)blob.data().data(), blob.data_size(), float16_weights);
+                        quantize_tag = quantize_weight((float *)blob.data().data(), blob.data_size(), float16_weights);
                     }
                 }
 
@@ -541,13 +544,13 @@ int main(int argc, char** argv)
                     int p0 = ftell(bp);
                     if (quantize_level == 256)
                     {
-                    // write quantize table and index
-                    fwrite(quantize_table.data(), sizeof(float), quantize_table.size(), bp);
-                    fwrite(quantize_index.data(), sizeof(unsigned char), quantize_index.size(), bp);
+                        // write quantize table and index
+                        fwrite(quantize_table.data(), sizeof(float), quantize_table.size(), bp);
+                        fwrite(quantize_index.data(), sizeof(unsigned char), quantize_index.size(), bp);
                     }
                     else if (quantize_level == 65536)
                     {
-                    fwrite(float16_weights.data(), sizeof(unsigned short), float16_weights.size(), bp);
+                        fwrite(float16_weights.data(), sizeof(unsigned short), float16_weights.size(), bp);
                     }
                     // padding to 32bit align
                     int nwrite = ftell(bp) - p0;
@@ -621,18 +624,18 @@ int main(int argc, char** argv)
 
             for (int g=0; g<group; g++)
             {
-            // reorder weight from inch-outch to outch-inch
-            int ksize = convolution_param.kernel_size(0);
-            int num_output = convolution_param.num_output() / group;
-            int num_input = weight_blob.data_size() / (ksize * ksize) / num_output / group;
-            const float* weight_data_ptr = weight_blob.data().data() + g * (ksize * ksize) * num_output * num_input;
-            for (int k=0; k<num_output; k++)
-            {
-                for (int j=0; j<num_input; j++)
+                // reorder weight from inch-outch to outch-inch
+                int ksize = convolution_param.kernel_size(0);
+                int num_output = convolution_param.num_output() / group;
+                int num_input = weight_blob.data_size() / (ksize * ksize) / num_output / group;
+                const float* weight_data_ptr = weight_blob.data().data() + g * (ksize * ksize) * num_output * num_input;
+                for (int k=0; k<num_output; k++)
                 {
-                    fwrite(weight_data_ptr + (j*num_output + k) * ksize * ksize, sizeof(float), ksize * ksize, bp);
+                    for (int j=0; j<num_input; j++)
+                    {
+                        fwrite(weight_data_ptr + (j*num_output + k) * ksize * ksize, sizeof(float), ksize * ksize, bp);
+                    }
                 }
-            }
             }
 
             for (int j=1; j<binlayer.blobs_size(); j++)
@@ -701,11 +704,11 @@ int main(int argc, char** argv)
                 {
                     if (quantize_level == 256)
                     {
-                    quantize_tag = quantize_weight((float *)blob.data().data(), blob.data_size(), quantize_level, quantize_table, quantize_index);
+                        quantize_tag = quantize_weight((float *)blob.data().data(), blob.data_size(), quantize_level, quantize_table, quantize_index);
                     }
                     else if (quantize_level == 65536)
                     {
-                    quantize_tag = quantize_weight((float *)blob.data().data(), blob.data_size(), float16_weights);
+                        quantize_tag = quantize_weight((float *)blob.data().data(), blob.data_size(), float16_weights);
                     }
                 }
 
@@ -714,17 +717,17 @@ int main(int argc, char** argv)
                     fwrite(&quantize_tag, sizeof(int), 1, bp);
 
                 if (quantize_tag)
-				{
+                {
                     int p0 = ftell(bp);
                     if (quantize_level == 256)
                     {
-                    // write quantize table and index
-                    fwrite(quantize_table.data(), sizeof(float), quantize_table.size(), bp);
-                    fwrite(quantize_index.data(), sizeof(unsigned char), quantize_index.size(), bp);
+                        // write quantize table and index
+                        fwrite(quantize_table.data(), sizeof(float), quantize_table.size(), bp);
+                        fwrite(quantize_index.data(), sizeof(unsigned char), quantize_index.size(), bp);
                     }
                     else if (quantize_level == 65536)
                     {
-                    fwrite(float16_weights.data(), sizeof(unsigned short), float16_weights.size(), bp);
+                        fwrite(float16_weights.data(), sizeof(unsigned short), float16_weights.size(), bp);
                     }
                     // padding to 32bit align
                     int nwrite = ftell(bp) - p0;
@@ -733,7 +736,7 @@ int main(int argc, char** argv)
                     fwrite(padding, sizeof(unsigned char), nalign - nwrite, bp);
                 }
                 else
-				{
+                {
                     // write original data
                     fwrite(blob.data().data(), sizeof(float), blob.data_size(), bp);
                 }
@@ -922,7 +925,8 @@ int main(int argc, char** argv)
             for (int j=0; j<prior_box_param.aspect_ratio_size(); j++)
             {
                 float ar = prior_box_param.aspect_ratio(j);
-                if (fabs(ar - 1.) < 1e-6) {
+                if (fabs(ar - 1.) < 1e-6)
+                {
                     num_aspect_ratio--;
                 }
             }
@@ -985,7 +989,8 @@ int main(int argc, char** argv)
             for (int j=0; j<prior_box_param.aspect_ratio_size(); j++)
             {
                 float ar = prior_box_param.aspect_ratio(j);
-                if (fabs(ar - 1.) < 1e-6) {
+                if (fabs(ar - 1.) < 1e-6)
+                {
                     continue;
                 }
                 fprintf(pp, ",%f", ar);
@@ -1090,7 +1095,7 @@ int main(int argc, char** argv)
         else if (layer.type() == "ShuffleChannel")
         {
             const caffe::ShuffleChannelParameter&
-                    shuffle_channel_param = layer.shuffle_channel_param();
+            shuffle_channel_param = layer.shuffle_channel_param();
             fprintf(pp, " 0=%d", shuffle_channel_param.group());
         }
         else if (layer.type() == "Slice")

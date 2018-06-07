@@ -19,7 +19,8 @@
 #include "mat.h"
 #include "platform.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class Net;
 class ModelBin

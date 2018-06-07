@@ -17,7 +17,8 @@
 
 #include "layer.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class Reduction : public Layer
 {
@@ -28,7 +29,8 @@ public:
 
     virtual int forward(const Mat& bottom_blob, Mat& top_blob) const;
 
-    enum {
+    enum
+    {
         ReductionOp_SUM     = 0,
         ReductionOp_ASUM    = 1,
         ReductionOp_SUMSQ   = 2,

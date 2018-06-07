@@ -14,7 +14,8 @@
 
 #include "deconvolutiondepthwise.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 DEFINE_LAYER_CREATOR(DeconvolutionDepthWise)
 

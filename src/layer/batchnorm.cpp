@@ -15,7 +15,8 @@
 #include "batchnorm.h"
 #include <math.h>
 
-namespace ncnn {
+namespace ncnn
+{
 
 DEFINE_LAYER_CREATOR(BatchNorm)
 

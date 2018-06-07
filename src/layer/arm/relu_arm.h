@@ -17,7 +17,8 @@
 
 #include "relu.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class ReLU_arm : public ReLU
 {

@@ -15,9 +15,11 @@
 #ifndef NCNN_LAYER_TYPE_H
 #define NCNN_LAYER_TYPE_H
 
-namespace ncnn {
+namespace ncnn
+{
 
-namespace LayerType {
+namespace LayerType
+{
 enum
 {
 #include "layer_type_enum.h"

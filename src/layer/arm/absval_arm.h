@@ -17,7 +17,8 @@
 
 #include "absval.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class AbsVal_arm : public AbsVal
 {

@@ -19,7 +19,8 @@
 #include "mat.h"
 #include "layer.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 // get now timestamp in ms
 double get_current_time();

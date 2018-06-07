@@ -14,7 +14,8 @@
 
 #include "pooling_arm.h"
 #include <float.h>
-namespace ncnn {
+namespace ncnn
+{
 
 #include "pooling_2x2.h"
 #include "pooling_3x3.h"

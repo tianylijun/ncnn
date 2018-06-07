@@ -17,7 +17,8 @@
 
 #include "convolution.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 typedef void (*conv_func)(const Mat&, Mat&, const Mat&, const Mat&);
 

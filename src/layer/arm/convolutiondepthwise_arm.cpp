@@ -20,7 +20,8 @@
 
 #include "layer_type.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 #include "convolutiondepthwise_3x3.h"
 

@@ -22,18 +22,20 @@
 
 #include "net.h"
 
-struct Object{
+struct Object
+{
     cv::Rect rec;
     int class_id;
     float prob;
 };
 
 const char* class_names[] = {"background",
-                            "aeroplane", "bicycle", "bird", "boat",
-                            "bottle", "bus", "car", "cat", "chair",
-                            "cow", "diningtable", "dog", "horse",
-                            "motorbike", "person", "pottedplant",
-                            "sheep", "sofa", "train", "tvmonitor"};
+                             "aeroplane", "bicycle", "bird", "boat",
+                             "bottle", "bus", "car", "cat", "chair",
+                             "cow", "diningtable", "dog", "horse",
+                             "motorbike", "person", "pottedplant",
+                             "sheep", "sofa", "train", "tvmonitor"
+                            };
 
 static int detect_mobilenet(cv::Mat& raw_img, float show_threshold)
 {
@@ -64,7 +66,7 @@ static int detect_mobilenet(cv::Mat& raw_img, float show_threshold)
 
     printf("%d %d %d\n", out.w, out.h, out.c);
     std::vector<Object> objects;
-    for (int iw=0;iw<out.h;iw++)
+    for (int iw=0; iw<out.h; iw++)
     {
         Object object;
         const float *values = out.row(iw);
@@ -77,7 +79,7 @@ static int detect_mobilenet(cv::Mat& raw_img, float show_threshold)
         objects.push_back(object);
     }
 
-    for(int i = 0;i<objects.size();++i)
+    for(int i = 0; i<objects.size(); ++i)
     {
         Object object = objects.at(i);
         if(object.prob > show_threshold)
@@ -89,10 +91,10 @@ static int detect_mobilenet(cv::Mat& raw_img, float show_threshold)
             int baseLine = 0;
             cv::Size label_size = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
             cv::rectangle(raw_img, cv::Rect(cv::Point(object.rec.x, object.rec.y- label_size.height),
-                                  cv::Size(label_size.width, label_size.height + baseLine)),
-                      cv::Scalar(255, 255, 255), CV_FILLED);
+                                            cv::Size(label_size.width, label_size.height + baseLine)),
+                          cv::Scalar(255, 255, 255), CV_FILLED);
             cv::putText(raw_img, label, cv::Point(object.rec.x, object.rec.y),
-                    cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
+                        cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
         }
     }
     cv::imshow("result",raw_img);

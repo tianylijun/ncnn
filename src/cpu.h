@@ -15,7 +15,8 @@
 #ifndef NCNN_CPU_H
 #define NCNN_CPU_H
 
-namespace ncnn {
+namespace ncnn
+{
 
 // test optional cpu features
 // neon = armv7 neon or aarch64 asimd

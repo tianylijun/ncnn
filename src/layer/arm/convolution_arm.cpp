@@ -14,7 +14,8 @@
 
 #include "convolution_arm.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 #include "convolution_1x1.h"
 #include "convolution_2x2.h"

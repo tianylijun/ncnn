@@ -17,7 +17,8 @@
 #include <algorithm>
 #include <functional>
 
-namespace ncnn {
+namespace ncnn
+{
 
 DEFINE_LAYER_CREATOR(BinaryOp)
 
@@ -377,18 +378,30 @@ static int binary_op_scalar_inplace(Mat& a, float b)
 }
 
 template<typename T>
-struct binary_op_max : std::binary_function<T,T,T> {
-    T operator() (const T& x, const T& y) const { return std::max(x, y); }
+struct binary_op_max : std::binary_function<T,T,T>
+{
+    T operator() (const T& x, const T& y) const
+    {
+        return std::max(x, y);
+    }
 };
 
 template<typename T>
-struct binary_op_min : std::binary_function<T,T,T> {
-    T operator() (const T& x, const T& y) const { return std::min(x, y); }
+struct binary_op_min : std::binary_function<T,T,T>
+{
+    T operator() (const T& x, const T& y) const
+    {
+        return std::min(x, y);
+    }
 };
 
 template<typename T>
-struct binary_op_pow : std::binary_function<T,T,T> {
-    T operator() (const T& x, const T& y) const { return pow(x, y); }
+struct binary_op_pow : std::binary_function<T,T,T>
+{
+    T operator() (const T& x, const T& y) const
+    {
+        return pow(x, y);
+    }
 };
 
 int BinaryOp::forward(const std::vector<Mat>& bottom_blobs, std::vector<Mat>& top_blobs) const

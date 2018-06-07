@@ -215,7 +215,7 @@ int main(int argc, char** argv)
         {
             bool isBinaryOp = false;
             if (node.op() == "Add" || node.op() == "BiasAdd" || node.op() == "Div"
-                || node.op() == "Mul" || node.op() == "RealDiv" || node.op() == "Sub")
+                    || node.op() == "Mul" || node.op() == "RealDiv" || node.op() == "Sub")
             {
                 isBinaryOp = true;
             }

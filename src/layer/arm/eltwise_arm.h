@@ -17,7 +17,8 @@
 
 #include "eltwise.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class Eltwise_arm : public Eltwise
 {

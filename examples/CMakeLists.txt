@@ -8,6 +8,8 @@ endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../src)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/../src)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pie -fPIE")
+
 add_executable(squeezenet squeezenet.cpp)
 target_link_libraries(squeezenet ncnn ${OpenCV_LIBS})
 
@@ -16,5 +18,8 @@ target_link_libraries(fasterrcnn ncnn ${OpenCV_LIBS})
 
 add_executable(mobilenet mobilenet.cpp)
 target_link_libraries(mobilenet ncnn ${OpenCV_LIBS})
+
+add_executable(onettest onettest.cpp)
+target_link_libraries(onettest ncnn ${OpenCV_LIBS})
 
 add_subdirectory(ssd)

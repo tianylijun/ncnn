@@ -16,7 +16,8 @@
 
 #include <string.h>
 
-namespace ncnn {
+namespace ncnn
+{
 
 Layer::Layer()
 {

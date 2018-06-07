@@ -17,7 +17,8 @@
 
 #include "convolutiondepthwise.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class ConvolutionDepthWise_x86 : public ConvolutionDepthWise
 {

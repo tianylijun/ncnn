@@ -17,7 +17,8 @@
 #include <algorithm>
 #include <vector>
 
-namespace ncnn {
+namespace ncnn
+{
 
 DEFINE_LAYER_CREATOR(Proposal)
 

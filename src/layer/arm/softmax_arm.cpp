@@ -21,7 +21,8 @@
 #include "neon_mathfun.h"
 #endif // __ARM_NEON
 
-namespace ncnn {
+namespace ncnn
+{
 
 DEFINE_LAYER_CREATOR(Softmax_arm)
 

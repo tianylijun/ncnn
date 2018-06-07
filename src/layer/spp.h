@@ -17,7 +17,8 @@
 
 #include "layer.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class SPP : public Layer
 {

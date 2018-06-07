@@ -17,7 +17,8 @@
 
 #include "scale.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class Scale_arm : public Scale
 {

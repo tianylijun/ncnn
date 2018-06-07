@@ -14,7 +14,8 @@
 
 #include "shufflechannel.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 DEFINE_LAYER_CREATOR(ShuffleChannel)
 

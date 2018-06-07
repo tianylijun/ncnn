@@ -17,7 +17,8 @@
 
 #include "deconvolutiondepthwise.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class DeconvolutionDepthWise_arm : public DeconvolutionDepthWise
 {

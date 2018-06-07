@@ -19,7 +19,8 @@
 #include <arm_neon.h>
 #endif // __ARM_NEON
 
-namespace ncnn {
+namespace ncnn
+{
 
 static Mat from_rgb(const unsigned char* rgb, int w, int h)
 {
@@ -71,42 +72,42 @@ static Mat from_rgb(const unsigned char* rgb, int w, int h)
 #else
     if (nn > 0)
     {
-    asm volatile(
-        "0:                             \n"
-        "pld        [%1, #256]          \n"
-        "vld3.u8    {d0-d2}, [%1]!      \n"
-        "vmovl.u8   q8, d0              \n"
-        "vmovl.u8   q9, d1              \n"
-        "vmovl.u8   q10, d2             \n"
-        "vmovl.u16  q0, d16             \n"
-        "vmovl.u16  q1, d17             \n"
-        "vmovl.u16  q2, d18             \n"
-        "vmovl.u16  q3, d19             \n"
-        "vmovl.u16  q8, d20             \n"
-        "vmovl.u16  q9, d21             \n"
-        "vcvt.f32.u32   q0, q0          \n"
-        "vcvt.f32.u32   q1, q1          \n"
-        "vcvt.f32.u32   q2, q2          \n"
-        "vcvt.f32.u32   q3, q3          \n"
-        "vcvt.f32.u32   q8, q8          \n"
-        "subs       %0, #1              \n"
-        "vst1.f32   {d0-d3}, [%2 :128]! \n"
-        "vcvt.f32.u32   q9, q9          \n"
-        "vst1.f32   {d4-d7}, [%3 :128]! \n"
-        "vst1.f32   {d16-d19}, [%4 :128]!\n"
-        "bne        0b                  \n"
-        : "=r"(nn),     // %0
-          "=r"(rgb),    // %1
-          "=r"(ptr0),   // %2
-          "=r"(ptr1),   // %3
-          "=r"(ptr2)    // %4
-        : "0"(nn),
-          "1"(rgb),
-          "2"(ptr0),
-          "3"(ptr1),
-          "4"(ptr2)
-        : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "q10"
-    );
+        asm volatile(
+            "0:                             \n"
+            "pld        [%1, #256]          \n"
+            "vld3.u8    {d0-d2}, [%1]!      \n"
+            "vmovl.u8   q8, d0              \n"
+            "vmovl.u8   q9, d1              \n"
+            "vmovl.u8   q10, d2             \n"
+            "vmovl.u16  q0, d16             \n"
+            "vmovl.u16  q1, d17             \n"
+            "vmovl.u16  q2, d18             \n"
+            "vmovl.u16  q3, d19             \n"
+            "vmovl.u16  q8, d20             \n"
+            "vmovl.u16  q9, d21             \n"
+            "vcvt.f32.u32   q0, q0          \n"
+            "vcvt.f32.u32   q1, q1          \n"
+            "vcvt.f32.u32   q2, q2          \n"
+            "vcvt.f32.u32   q3, q3          \n"
+            "vcvt.f32.u32   q8, q8          \n"
+            "subs       %0, #1              \n"
+            "vst1.f32   {d0-d3}, [%2 :128]! \n"
+            "vcvt.f32.u32   q9, q9          \n"
+            "vst1.f32   {d4-d7}, [%3 :128]! \n"
+            "vst1.f32   {d16-d19}, [%4 :128]!\n"
+            "bne        0b                  \n"
+            : "=r"(nn),     // %0
+            "=r"(rgb),    // %1
+            "=r"(ptr0),   // %2
+            "=r"(ptr1),   // %3
+            "=r"(ptr2)    // %4
+            : "0"(nn),
+            "1"(rgb),
+            "2"(ptr0),
+            "3"(ptr1),
+            "4"(ptr2)
+            : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "q10"
+        );
     }
 #endif // __aarch64__
 #endif // __ARM_NEON
@@ -193,32 +194,32 @@ static Mat from_gray(const unsigned char* gray, int w, int h)
 #else
     if (nn > 0)
     {
-    asm volatile(
-        "0:                             \n"
-        "pld        [%1, #128]          \n"
-        "vld1.u8    {d0,d1}, [%1]!      \n"
-        "vmovl.u8   q8, d0              \n"
-        "vmovl.u8   q9, d1              \n"
-        "vmovl.u16  q0, d16             \n"
-        "vmovl.u16  q1, d17             \n"
-        "vmovl.u16  q2, d18             \n"
-        "vmovl.u16  q3, d19             \n"
-        "vcvt.f32.u32   q0, q0          \n"
-        "vcvt.f32.u32   q1, q1          \n"
-        "vcvt.f32.u32   q2, q2          \n"
-        "vcvt.f32.u32   q3, q3          \n"
-        "subs       %0, #1              \n"
-        "vst1.f32   {d0-d3}, [%2 :128]! \n"
-        "vst1.f32   {d4-d7}, [%2 :128]! \n"
-        "bne        0b                  \n"
-        : "=r"(nn),     // %0
-          "=r"(gray),   // %1
-          "=r"(ptr)     // %2
-        : "0"(nn),
-          "1"(gray),
-          "2"(ptr)
-        : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9"
-    );
+        asm volatile(
+            "0:                             \n"
+            "pld        [%1, #128]          \n"
+            "vld1.u8    {d0,d1}, [%1]!      \n"
+            "vmovl.u8   q8, d0              \n"
+            "vmovl.u8   q9, d1              \n"
+            "vmovl.u16  q0, d16             \n"
+            "vmovl.u16  q1, d17             \n"
+            "vmovl.u16  q2, d18             \n"
+            "vmovl.u16  q3, d19             \n"
+            "vcvt.f32.u32   q0, q0          \n"
+            "vcvt.f32.u32   q1, q1          \n"
+            "vcvt.f32.u32   q2, q2          \n"
+            "vcvt.f32.u32   q3, q3          \n"
+            "subs       %0, #1              \n"
+            "vst1.f32   {d0-d3}, [%2 :128]! \n"
+            "vst1.f32   {d4-d7}, [%2 :128]! \n"
+            "bne        0b                  \n"
+            : "=r"(nn),     // %0
+            "=r"(gray),   // %1
+            "=r"(ptr)     // %2
+            : "0"(nn),
+            "1"(gray),
+            "2"(ptr)
+            : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9"
+        );
     }
 #endif // __aarch64__
 #endif // __ARM_NEON
@@ -311,50 +312,50 @@ static Mat from_rgba(const unsigned char* rgba, int w, int h)
 #else
     if (nn > 0)
     {
-    asm volatile(
-        "0:                             \n"
-        "pld        [%1, #256]          \n"
-        "vld4.u8    {d0-d3}, [%1]!      \n"
-        "vmovl.u8   q8, d0              \n"
-        "vmovl.u8   q9, d1              \n"
-        "vmovl.u8   q10, d2             \n"
-        "vmovl.u8   q11, d3             \n"
-        "vmovl.u16  q0, d16             \n"
-        "vmovl.u16  q1, d17             \n"
-        "vmovl.u16  q2, d18             \n"
-        "vmovl.u16  q3, d19             \n"
-        "vmovl.u16  q8, d20             \n"
-        "vmovl.u16  q9, d21             \n"
-        "vmovl.u16  q10, d22            \n"
-        "vmovl.u16  q11, d23            \n"
-        "vcvt.f32.u32   q0, q0          \n"
-        "vcvt.f32.u32   q1, q1          \n"
-        "vcvt.f32.u32   q2, q2          \n"
-        "vcvt.f32.u32   q3, q3          \n"
-        "vcvt.f32.u32   q8, q8          \n"
-        "vcvt.f32.u32   q9, q9          \n"
-        "subs       %0, #1              \n"
-        "vst1.f32   {d0-d3}, [%2 :128]! \n"
-        "vcvt.f32.u32   q10, q10        \n"
-        "vcvt.f32.u32   q11, q11        \n"
-        "vst1.f32   {d4-d7}, [%3 :128]! \n"
-        "vst1.f32   {d16-d19}, [%4 :128]!\n"
-        "vst1.f32   {d20-d23}, [%5 :128]!\n"
-        "bne        0b                  \n"
-        : "=r"(nn),     // %0
-          "=r"(rgba),   // %1
-          "=r"(ptr0),   // %2
-          "=r"(ptr1),   // %3
-          "=r"(ptr2),   // %4
-          "=r"(ptr3)    // %5
-        : "0"(nn),
-          "1"(rgba),
-          "2"(ptr0),
-          "3"(ptr1),
-          "4"(ptr2),
-          "5"(ptr3)
-        : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11"
-    );
+        asm volatile(
+            "0:                             \n"
+            "pld        [%1, #256]          \n"
+            "vld4.u8    {d0-d3}, [%1]!      \n"
+            "vmovl.u8   q8, d0              \n"
+            "vmovl.u8   q9, d1              \n"
+            "vmovl.u8   q10, d2             \n"
+            "vmovl.u8   q11, d3             \n"
+            "vmovl.u16  q0, d16             \n"
+            "vmovl.u16  q1, d17             \n"
+            "vmovl.u16  q2, d18             \n"
+            "vmovl.u16  q3, d19             \n"
+            "vmovl.u16  q8, d20             \n"
+            "vmovl.u16  q9, d21             \n"
+            "vmovl.u16  q10, d22            \n"
+            "vmovl.u16  q11, d23            \n"
+            "vcvt.f32.u32   q0, q0          \n"
+            "vcvt.f32.u32   q1, q1          \n"
+            "vcvt.f32.u32   q2, q2          \n"
+            "vcvt.f32.u32   q3, q3          \n"
+            "vcvt.f32.u32   q8, q8          \n"
+            "vcvt.f32.u32   q9, q9          \n"
+            "subs       %0, #1              \n"
+            "vst1.f32   {d0-d3}, [%2 :128]! \n"
+            "vcvt.f32.u32   q10, q10        \n"
+            "vcvt.f32.u32   q11, q11        \n"
+            "vst1.f32   {d4-d7}, [%3 :128]! \n"
+            "vst1.f32   {d16-d19}, [%4 :128]!\n"
+            "vst1.f32   {d20-d23}, [%5 :128]!\n"
+            "bne        0b                  \n"
+            : "=r"(nn),     // %0
+            "=r"(rgba),   // %1
+            "=r"(ptr0),   // %2
+            "=r"(ptr1),   // %3
+            "=r"(ptr2),   // %4
+            "=r"(ptr3)    // %5
+            : "0"(nn),
+            "1"(rgba),
+            "2"(ptr0),
+            "3"(ptr1),
+            "4"(ptr2),
+            "5"(ptr3)
+            : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11"
+        );
     }
 #endif // __aarch64__
 #endif // __ARM_NEON
@@ -403,6 +404,55 @@ static void to_rgba(const Mat& m, unsigned char* rgba)
     }
 
 #undef SATURATE_CAST_UCHAR
+}
+
+static Mat from_yuv420sp(const unsigned char* yuv, int w, int h, int stride)
+{
+    unsigned int i,j;
+    unsigned int dstw = w>>1;
+    unsigned int dsth = h>>1;
+    unsigned int left = dstw&0x0f;
+
+    Mat m(dstw, dsth, 3, 1);
+    if (m.empty())
+        return m;
+
+    unsigned char* pDst = (unsigned char*)m.data;
+    const unsigned char * uv = yuv + stride * h;
+
+    for( i = 0; i < dsth; i++)
+    {
+        const unsigned char *pCurY = yuv + (i<<1)*stride;
+        const unsigned char *pCurUV = uv + i*2*dstw;
+        unsigned char*pDstCur = pDst + 3*dstw;
+
+        for( j = 0; j < dstw; j += 16)
+        {
+            uint8x16x2_t vsrc8x16x2_y = vld2q_u8(pCurY);  //load 32 bytes
+            uint8x16x2_t vsrc8x16x2_uv = vld2q_u8(pCurUV);//load 32 bytes
+            uint8x16x3_t vsrc8x16x3;
+            vsrc8x16x3.val[0] = vsrc8x16x2_y.val[0];
+            vsrc8x16x3.val[1] = vsrc8x16x2_uv.val[0];
+            vsrc8x16x3.val[2] = vsrc8x16x2_uv.val[1];
+            vst3q_u8(pDstCur, vsrc8x16x3); //store 48 bytes
+
+            pDstCur += 48;
+            pCurY += 32;
+            pCurUV += 32;
+        }
+
+        for( j = 0; j < left; j++)
+        {
+            *pDstCur++ = *pCurY;
+            *pDstCur++ = *pCurUV;
+            *pDstCur++ = *(pCurUV+1);
+
+            pCurY  += 2;
+            pCurUV += 2;
+        }
+    }
+
+    return m;
 }
 
 static Mat from_rgb2bgr(const unsigned char* rgb, int w, int h)
@@ -455,42 +505,42 @@ static Mat from_rgb2bgr(const unsigned char* rgb, int w, int h)
 #else
     if (nn > 0)
     {
-    asm volatile(
-        "0:                             \n"
-        "pld        [%1, #256]          \n"
-        "vld3.u8    {d0-d2}, [%1]!      \n"
-        "vmovl.u8   q8, d0              \n"
-        "vmovl.u8   q9, d1              \n"
-        "vmovl.u8   q10, d2             \n"
-        "vmovl.u16  q0, d16             \n"
-        "vmovl.u16  q1, d17             \n"
-        "vmovl.u16  q2, d18             \n"
-        "vmovl.u16  q3, d19             \n"
-        "vmovl.u16  q8, d20             \n"
-        "vmovl.u16  q9, d21             \n"
-        "vcvt.f32.u32   q0, q0          \n"
-        "vcvt.f32.u32   q1, q1          \n"
-        "vcvt.f32.u32   q2, q2          \n"
-        "vcvt.f32.u32   q3, q3          \n"
-        "vcvt.f32.u32   q8, q8          \n"
-        "subs       %0, #1              \n"
-        "vst1.f32   {d0-d3}, [%4 :128]! \n"
-        "vcvt.f32.u32   q9, q9          \n"
-        "vst1.f32   {d4-d7}, [%3 :128]! \n"
-        "vst1.f32   {d16-d19}, [%2 :128]!\n"
-        "bne        0b                  \n"
-        : "=r"(nn),     // %0
-          "=r"(rgb),    // %1
-          "=r"(ptr0),   // %2
-          "=r"(ptr1),   // %3
-          "=r"(ptr2)    // %4
-        : "0"(nn),
-          "1"(rgb),
-          "2"(ptr0),
-          "3"(ptr1),
-          "4"(ptr2)
-        : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "q10"
-    );
+        asm volatile(
+            "0:                             \n"
+            "pld        [%1, #256]          \n"
+            "vld3.u8    {d0-d2}, [%1]!      \n"
+            "vmovl.u8   q8, d0              \n"
+            "vmovl.u8   q9, d1              \n"
+            "vmovl.u8   q10, d2             \n"
+            "vmovl.u16  q0, d16             \n"
+            "vmovl.u16  q1, d17             \n"
+            "vmovl.u16  q2, d18             \n"
+            "vmovl.u16  q3, d19             \n"
+            "vmovl.u16  q8, d20             \n"
+            "vmovl.u16  q9, d21             \n"
+            "vcvt.f32.u32   q0, q0          \n"
+            "vcvt.f32.u32   q1, q1          \n"
+            "vcvt.f32.u32   q2, q2          \n"
+            "vcvt.f32.u32   q3, q3          \n"
+            "vcvt.f32.u32   q8, q8          \n"
+            "subs       %0, #1              \n"
+            "vst1.f32   {d0-d3}, [%4 :128]! \n"
+            "vcvt.f32.u32   q9, q9          \n"
+            "vst1.f32   {d4-d7}, [%3 :128]! \n"
+            "vst1.f32   {d16-d19}, [%2 :128]!\n"
+            "bne        0b                  \n"
+            : "=r"(nn),     // %0
+            "=r"(rgb),    // %1
+            "=r"(ptr0),   // %2
+            "=r"(ptr1),   // %3
+            "=r"(ptr2)    // %4
+            : "0"(nn),
+            "1"(rgb),
+            "2"(ptr0),
+            "3"(ptr1),
+            "4"(ptr2)
+            : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "q10"
+        );
     }
 #endif // __aarch64__
 #endif // __ARM_NEON
@@ -585,35 +635,35 @@ static Mat from_rgb2gray(const unsigned char* rgb, int w, int h)
 #else
     if (nn > 0)
     {
-    asm volatile(
-        "vdup.u8    d16, %6             \n"
-        "vdup.u8    d17, %7             \n"
-        "vdup.u8    d18, %8             \n"
-        "0:                             \n"
-        "pld        [%1, #256]          \n"
-        "vld3.u8    {d0-d2}, [%1]!      \n"
-        "vmull.u8   q2, d0, d16         \n"
-        "vmlal.u8   q2, d1, d17         \n"
-        "vmlal.u8   q2, d2, d18         \n"
-        "vshr.u16   q2, q2, #8          \n" // Y_shift
-        "vmovl.u16  q0, d4              \n"
-        "vmovl.u16  q1, d5              \n"
-        "vcvt.f32.u32   q0, q0          \n"
-        "vcvt.f32.u32   q1, q1          \n"
-        "subs       %0, #1              \n"
-        "vst1.f32   {d0-d3}, [%2 :128]! \n"
-        "bne        0b                  \n"
-        : "=r"(nn),     // %0
-          "=r"(rgb),    // %1
-          "=r"(ptr)     // %2
-        : "0"(nn),
-          "1"(rgb),
-          "2"(ptr),
-          "r"(R2Y),     // %6
-          "r"(G2Y),     // %7
-          "r"(B2Y)      // %8
-        : "cc", "memory", "q0", "q1", "q2", "q8", "q9"
-    );
+        asm volatile(
+            "vdup.u8    d16, %6             \n"
+            "vdup.u8    d17, %7             \n"
+            "vdup.u8    d18, %8             \n"
+            "0:                             \n"
+            "pld        [%1, #256]          \n"
+            "vld3.u8    {d0-d2}, [%1]!      \n"
+            "vmull.u8   q2, d0, d16         \n"
+            "vmlal.u8   q2, d1, d17         \n"
+            "vmlal.u8   q2, d2, d18         \n"
+            "vshr.u16   q2, q2, #8          \n" // Y_shift
+            "vmovl.u16  q0, d4              \n"
+            "vmovl.u16  q1, d5              \n"
+            "vcvt.f32.u32   q0, q0          \n"
+            "vcvt.f32.u32   q1, q1          \n"
+            "subs       %0, #1              \n"
+            "vst1.f32   {d0-d3}, [%2 :128]! \n"
+            "bne        0b                  \n"
+            : "=r"(nn),     // %0
+            "=r"(rgb),    // %1
+            "=r"(ptr)     // %2
+            : "0"(nn),
+            "1"(rgb),
+            "2"(ptr),
+            "r"(R2Y),     // %6
+            "r"(G2Y),     // %7
+            "r"(B2Y)      // %8
+            : "cc", "memory", "q0", "q1", "q2", "q8", "q9"
+        );
     }
 #endif // __aarch64__
 #endif // __ARM_NEON
@@ -677,35 +727,35 @@ static Mat from_bgr2gray(const unsigned char* bgr, int w, int h)
 #else
     if (nn > 0)
     {
-    asm volatile(
-        "vdup.u8    d16, %6             \n"
-        "vdup.u8    d17, %7             \n"
-        "vdup.u8    d18, %8             \n"
-        "0:                             \n"
-        "pld        [%1, #256]          \n"
-        "vld3.u8    {d0-d2}, [%1]!      \n"
-        "vmull.u8   q2, d2, d16         \n"
-        "vmlal.u8   q2, d1, d17         \n"
-        "vmlal.u8   q2, d0, d18         \n"
-        "vshr.u16   q2, q2, #8          \n" // Y_shift
-        "vmovl.u16  q0, d4              \n"
-        "vmovl.u16  q1, d5              \n"
-        "vcvt.f32.u32   q0, q0          \n"
-        "vcvt.f32.u32   q1, q1          \n"
-        "subs       %0, #1              \n"
-        "vst1.f32   {d0-d3}, [%2 :128]! \n"
-        "bne        0b                  \n"
-        : "=r"(nn),     // %0
-          "=r"(bgr),    // %1
-          "=r"(ptr)     // %2
-        : "0"(nn),
-          "1"(bgr),
-          "2"(ptr),
-          "r"(R2Y),     // %6
-          "r"(G2Y),     // %7
-          "r"(B2Y)      // %8
-        : "cc", "memory", "q0", "q1", "q2", "q8", "q9"
-    );
+        asm volatile(
+            "vdup.u8    d16, %6             \n"
+            "vdup.u8    d17, %7             \n"
+            "vdup.u8    d18, %8             \n"
+            "0:                             \n"
+            "pld        [%1, #256]          \n"
+            "vld3.u8    {d0-d2}, [%1]!      \n"
+            "vmull.u8   q2, d2, d16         \n"
+            "vmlal.u8   q2, d1, d17         \n"
+            "vmlal.u8   q2, d0, d18         \n"
+            "vshr.u16   q2, q2, #8          \n" // Y_shift
+            "vmovl.u16  q0, d4              \n"
+            "vmovl.u16  q1, d5              \n"
+            "vcvt.f32.u32   q0, q0          \n"
+            "vcvt.f32.u32   q1, q1          \n"
+            "subs       %0, #1              \n"
+            "vst1.f32   {d0-d3}, [%2 :128]! \n"
+            "bne        0b                  \n"
+            : "=r"(nn),     // %0
+            "=r"(bgr),    // %1
+            "=r"(ptr)     // %2
+            : "0"(nn),
+            "1"(bgr),
+            "2"(ptr),
+            "r"(R2Y),     // %6
+            "r"(G2Y),     // %7
+            "r"(B2Y)      // %8
+            : "cc", "memory", "q0", "q1", "q2", "q8", "q9"
+        );
     }
 #endif // __aarch64__
 #endif // __ARM_NEON
@@ -775,40 +825,40 @@ static Mat from_gray2rgb(const unsigned char* gray, int w, int h)
 #else
     if (nn > 0)
     {
-    asm volatile(
-        "0:                             \n"
-        "pld        [%1, #128]          \n"
-        "vld1.u8    {d0,d1}, [%1]!      \n"
-        "vmovl.u8   q8, d0              \n"
-        "vmovl.u8   q9, d1              \n"
-        "vmovl.u16  q0, d16             \n"
-        "vmovl.u16  q1, d17             \n"
-        "vmovl.u16  q2, d18             \n"
-        "vmovl.u16  q3, d19             \n"
-        "vcvt.f32.u32   q0, q0          \n"
-        "vcvt.f32.u32   q1, q1          \n"
-        "vcvt.f32.u32   q2, q2          \n"
-        "vcvt.f32.u32   q3, q3          \n"
-        "subs       %0, #1              \n"
-        "vst1.f32   {d0-d3}, [%2 :128]! \n"
-        "vst1.f32   {d4-d7}, [%2 :128]! \n"
-        "vst1.f32   {d0-d3}, [%3 :128]! \n"
-        "vst1.f32   {d4-d7}, [%3 :128]! \n"
-        "vst1.f32   {d0-d3}, [%4 :128]! \n"
-        "vst1.f32   {d4-d7}, [%4 :128]! \n"
-        "bne        0b                  \n"
-        : "=r"(nn),     // %0
-          "=r"(gray),   // %1
-          "=r"(ptr0),   // %2
-          "=r"(ptr1),   // %3
-          "=r"(ptr2)    // %4
-        : "0"(nn),
-          "1"(gray),
-          "2"(ptr0),
-          "3"(ptr1),
-          "4"(ptr2)
-        : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9"
-    );
+        asm volatile(
+            "0:                             \n"
+            "pld        [%1, #128]          \n"
+            "vld1.u8    {d0,d1}, [%1]!      \n"
+            "vmovl.u8   q8, d0              \n"
+            "vmovl.u8   q9, d1              \n"
+            "vmovl.u16  q0, d16             \n"
+            "vmovl.u16  q1, d17             \n"
+            "vmovl.u16  q2, d18             \n"
+            "vmovl.u16  q3, d19             \n"
+            "vcvt.f32.u32   q0, q0          \n"
+            "vcvt.f32.u32   q1, q1          \n"
+            "vcvt.f32.u32   q2, q2          \n"
+            "vcvt.f32.u32   q3, q3          \n"
+            "subs       %0, #1              \n"
+            "vst1.f32   {d0-d3}, [%2 :128]! \n"
+            "vst1.f32   {d4-d7}, [%2 :128]! \n"
+            "vst1.f32   {d0-d3}, [%3 :128]! \n"
+            "vst1.f32   {d4-d7}, [%3 :128]! \n"
+            "vst1.f32   {d0-d3}, [%4 :128]! \n"
+            "vst1.f32   {d4-d7}, [%4 :128]! \n"
+            "bne        0b                  \n"
+            : "=r"(nn),     // %0
+            "=r"(gray),   // %1
+            "=r"(ptr0),   // %2
+            "=r"(ptr1),   // %3
+            "=r"(ptr2)    // %4
+            : "0"(nn),
+            "1"(gray),
+            "2"(ptr0),
+            "3"(ptr1),
+            "4"(ptr2)
+            : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9"
+        );
     }
 #endif // __aarch64__
 #endif // __ARM_NEON
@@ -877,42 +927,42 @@ static Mat from_rgba2rgb(const unsigned char* rgba, int w, int h)
 #else
     if (nn > 0)
     {
-    asm volatile(
-        "0:                             \n"
-        "pld        [%1, #256]          \n"
-        "vld4.u8    {d0-d3}, [%1]!      \n"
-        "vmovl.u8   q8, d0              \n"
-        "vmovl.u8   q9, d1              \n"
-        "vmovl.u8   q10, d2             \n"
-        "vmovl.u16  q0, d16             \n"
-        "vmovl.u16  q1, d17             \n"
-        "vmovl.u16  q2, d18             \n"
-        "vmovl.u16  q3, d19             \n"
-        "vmovl.u16  q8, d20             \n"
-        "vmovl.u16  q9, d21             \n"
-        "vcvt.f32.u32   q0, q0          \n"
-        "vcvt.f32.u32   q1, q1          \n"
-        "vcvt.f32.u32   q2, q2          \n"
-        "vcvt.f32.u32   q3, q3          \n"
-        "vcvt.f32.u32   q8, q8          \n"
-        "subs       %0, #1              \n"
-        "vst1.f32   {d0-d3}, [%2 :128]! \n"
-        "vcvt.f32.u32   q9, q9          \n"
-        "vst1.f32   {d4-d7}, [%3 :128]! \n"
-        "vst1.f32   {d16-d19}, [%4 :128]!\n"
-        "bne        0b                  \n"
-        : "=r"(nn),     // %0
-          "=r"(rgba),   // %1
-          "=r"(ptr0),   // %2
-          "=r"(ptr1),   // %3
-          "=r"(ptr2)    // %4
-        : "0"(nn),
-          "1"(rgba),
-          "2"(ptr0),
-          "3"(ptr1),
-          "4"(ptr2)
-        : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9"
-    );
+        asm volatile(
+            "0:                             \n"
+            "pld        [%1, #256]          \n"
+            "vld4.u8    {d0-d3}, [%1]!      \n"
+            "vmovl.u8   q8, d0              \n"
+            "vmovl.u8   q9, d1              \n"
+            "vmovl.u8   q10, d2             \n"
+            "vmovl.u16  q0, d16             \n"
+            "vmovl.u16  q1, d17             \n"
+            "vmovl.u16  q2, d18             \n"
+            "vmovl.u16  q3, d19             \n"
+            "vmovl.u16  q8, d20             \n"
+            "vmovl.u16  q9, d21             \n"
+            "vcvt.f32.u32   q0, q0          \n"
+            "vcvt.f32.u32   q1, q1          \n"
+            "vcvt.f32.u32   q2, q2          \n"
+            "vcvt.f32.u32   q3, q3          \n"
+            "vcvt.f32.u32   q8, q8          \n"
+            "subs       %0, #1              \n"
+            "vst1.f32   {d0-d3}, [%2 :128]! \n"
+            "vcvt.f32.u32   q9, q9          \n"
+            "vst1.f32   {d4-d7}, [%3 :128]! \n"
+            "vst1.f32   {d16-d19}, [%4 :128]!\n"
+            "bne        0b                  \n"
+            : "=r"(nn),     // %0
+            "=r"(rgba),   // %1
+            "=r"(ptr0),   // %2
+            "=r"(ptr1),   // %3
+            "=r"(ptr2)    // %4
+            : "0"(nn),
+            "1"(rgba),
+            "2"(ptr0),
+            "3"(ptr1),
+            "4"(ptr2)
+            : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9"
+        );
     }
 #endif // __aarch64__
 #endif // __ARM_NEON
@@ -981,42 +1031,42 @@ static Mat from_rgba2bgr(const unsigned char* rgba, int w, int h)
 #else
     if (nn > 0)
     {
-    asm volatile(
-        "0:                             \n"
-        "pld        [%1, #256]          \n"
-        "vld4.u8    {d0-d3}, [%1]!      \n"
-        "vmovl.u8   q8, d0              \n"
-        "vmovl.u8   q9, d1              \n"
-        "vmovl.u8   q10, d2             \n"
-        "vmovl.u16  q0, d16             \n"
-        "vmovl.u16  q1, d17             \n"
-        "vmovl.u16  q2, d18             \n"
-        "vmovl.u16  q3, d19             \n"
-        "vmovl.u16  q8, d20             \n"
-        "vmovl.u16  q9, d21             \n"
-        "vcvt.f32.u32   q0, q0          \n"
-        "vcvt.f32.u32   q1, q1          \n"
-        "vcvt.f32.u32   q2, q2          \n"
-        "vcvt.f32.u32   q3, q3          \n"
-        "vcvt.f32.u32   q8, q8          \n"
-        "subs       %0, #1              \n"
-        "vst1.f32   {d0-d3}, [%4 :128]! \n"
-        "vcvt.f32.u32   q9, q9          \n"
-        "vst1.f32   {d4-d7}, [%3 :128]! \n"
-        "vst1.f32   {d16-d19}, [%2 :128]!\n"
-        "bne        0b                  \n"
-        : "=r"(nn),     // %0
-          "=r"(rgba),   // %1
-          "=r"(ptr0),   // %2
-          "=r"(ptr1),   // %3
-          "=r"(ptr2)    // %4
-        : "0"(nn),
-          "1"(rgba),
-          "2"(ptr0),
-          "3"(ptr1),
-          "4"(ptr2)
-        : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "q10"
-    );
+        asm volatile(
+            "0:                             \n"
+            "pld        [%1, #256]          \n"
+            "vld4.u8    {d0-d3}, [%1]!      \n"
+            "vmovl.u8   q8, d0              \n"
+            "vmovl.u8   q9, d1              \n"
+            "vmovl.u8   q10, d2             \n"
+            "vmovl.u16  q0, d16             \n"
+            "vmovl.u16  q1, d17             \n"
+            "vmovl.u16  q2, d18             \n"
+            "vmovl.u16  q3, d19             \n"
+            "vmovl.u16  q8, d20             \n"
+            "vmovl.u16  q9, d21             \n"
+            "vcvt.f32.u32   q0, q0          \n"
+            "vcvt.f32.u32   q1, q1          \n"
+            "vcvt.f32.u32   q2, q2          \n"
+            "vcvt.f32.u32   q3, q3          \n"
+            "vcvt.f32.u32   q8, q8          \n"
+            "subs       %0, #1              \n"
+            "vst1.f32   {d0-d3}, [%4 :128]! \n"
+            "vcvt.f32.u32   q9, q9          \n"
+            "vst1.f32   {d4-d7}, [%3 :128]! \n"
+            "vst1.f32   {d16-d19}, [%2 :128]!\n"
+            "bne        0b                  \n"
+            : "=r"(nn),     // %0
+            "=r"(rgba),   // %1
+            "=r"(ptr0),   // %2
+            "=r"(ptr1),   // %3
+            "=r"(ptr2)    // %4
+            : "0"(nn),
+            "1"(rgba),
+            "2"(ptr0),
+            "3"(ptr1),
+            "4"(ptr2)
+            : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "q10"
+        );
     }
 #endif // __aarch64__
 #endif // __ARM_NEON
@@ -1084,35 +1134,35 @@ static Mat from_rgba2gray(const unsigned char* rgba, int w, int h)
 #else
     if (nn > 0)
     {
-    asm volatile(
-        "vdup.u8    d16, %6             \n"
-        "vdup.u8    d17, %7             \n"
-        "vdup.u8    d18, %8             \n"
-        "0:                             \n"
-        "pld        [%1, #256]          \n"
-        "vld4.u8    {d0-d3}, [%1]!      \n"
-        "vmull.u8   q2, d0, d16         \n"
-        "vmlal.u8   q2, d1, d17         \n"
-        "vmlal.u8   q2, d2, d18         \n"
-        "vshr.u16   q2, q2, #8          \n" // Y_shift
-        "vmovl.u16  q0, d4              \n"
-        "vmovl.u16  q1, d5              \n"
-        "vcvt.f32.u32   q0, q0          \n"
-        "vcvt.f32.u32   q1, q1          \n"
-        "subs       %0, #1              \n"
-        "vst1.f32   {d0-d3}, [%2 :128]! \n"
-        "bne        0b                  \n"
-        : "=r"(nn),     // %0
-          "=r"(rgba),   // %1
-          "=r"(ptr)     // %2
-        : "0"(nn),
-          "1"(rgba),
-          "2"(ptr),
-          "r"(R2Y),     // %6
-          "r"(G2Y),     // %7
-          "r"(B2Y)      // %8
-        : "cc", "memory", "q0", "q1", "q2", "q8", "q9"
-    );
+        asm volatile(
+            "vdup.u8    d16, %6             \n"
+            "vdup.u8    d17, %7             \n"
+            "vdup.u8    d18, %8             \n"
+            "0:                             \n"
+            "pld        [%1, #256]          \n"
+            "vld4.u8    {d0-d3}, [%1]!      \n"
+            "vmull.u8   q2, d0, d16         \n"
+            "vmlal.u8   q2, d1, d17         \n"
+            "vmlal.u8   q2, d2, d18         \n"
+            "vshr.u16   q2, q2, #8          \n" // Y_shift
+            "vmovl.u16  q0, d4              \n"
+            "vmovl.u16  q1, d5              \n"
+            "vcvt.f32.u32   q0, q0          \n"
+            "vcvt.f32.u32   q1, q1          \n"
+            "subs       %0, #1              \n"
+            "vst1.f32   {d0-d3}, [%2 :128]! \n"
+            "bne        0b                  \n"
+            : "=r"(nn),     // %0
+            "=r"(rgba),   // %1
+            "=r"(ptr)     // %2
+            : "0"(nn),
+            "1"(rgba),
+            "2"(ptr),
+            "r"(R2Y),     // %6
+            "r"(G2Y),     // %7
+            "r"(B2Y)      // %8
+            : "cc", "memory", "q0", "q1", "q2", "q8", "q9"
+        );
     }
 #endif // __aarch64__
 #endif // __ARM_NEON
@@ -1352,50 +1402,50 @@ void resize_bilinear_c3(const unsigned char* src, int srcw, int srch, unsigned c
 #else
         if (nn > 0)
         {
-        asm volatile(
-            "vdup.s16   d16, %8         \n"
-            "mov        r4, #2          \n"
-            "vdup.s16   d17, %9         \n"
-            "vdup.s32   q12, r4         \n"
-            "pld        [%0, #128]      \n"
-            "vld1.s16   {d2-d3}, [%0 :128]!\n"
-            "pld        [%1, #128]      \n"
-            "vld1.s16   {d6-d7}, [%1 :128]!\n"
-            "0:                         \n"
-            "vmull.s16  q0, d2, d16     \n"
-            "vmull.s16  q1, d3, d16     \n"
-            "vorr.s32   q10, q12, q12   \n"
-            "vorr.s32   q11, q12, q12   \n"
-            "vmull.s16  q2, d6, d17     \n"
-            "vmull.s16  q3, d7, d17     \n"
-            "vsra.s32   q10, q0, #16    \n"
-            "vsra.s32   q11, q1, #16    \n"
-            "pld        [%0, #128]      \n"
-            "vld1.s16   {d2-d3}, [%0 :128]!\n"
-            "vsra.s32   q10, q2, #16    \n"
-            "vsra.s32   q11, q3, #16    \n"
-            "pld        [%1, #128]      \n"
-            "vld1.s16   {d6-d7}, [%1 :128]!\n"
-            "vshrn.s32  d20, q10, #2    \n"
-            "vshrn.s32  d21, q11, #2    \n"
-            "vqmovun.s16 d20, q10        \n"
-            "vst1.8     {d20}, [%2]!    \n"
-            "subs       %3, #1          \n"
-            "bne        0b              \n"
-            "sub        %0, #16         \n"
-            "sub        %1, #16         \n"
-            : "=r"(rows0p), // %0
-              "=r"(rows1p), // %1
-              "=r"(Dp),     // %2
-              "=r"(nn)      // %3
-            : "0"(rows0p),
-              "1"(rows1p),
-              "2"(Dp),
-              "3"(nn),
-              "r"(b0),      // %8
-              "r"(b1)       // %9
-            : "cc", "memory", "r4", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11", "q12"
-        );
+            asm volatile(
+                "vdup.s16   d16, %8         \n"
+                "mov        r4, #2          \n"
+                "vdup.s16   d17, %9         \n"
+                "vdup.s32   q12, r4         \n"
+                "pld        [%0, #128]      \n"
+                "vld1.s16   {d2-d3}, [%0 :128]!\n"
+                "pld        [%1, #128]      \n"
+                "vld1.s16   {d6-d7}, [%1 :128]!\n"
+                "0:                         \n"
+                "vmull.s16  q0, d2, d16     \n"
+                "vmull.s16  q1, d3, d16     \n"
+                "vorr.s32   q10, q12, q12   \n"
+                "vorr.s32   q11, q12, q12   \n"
+                "vmull.s16  q2, d6, d17     \n"
+                "vmull.s16  q3, d7, d17     \n"
+                "vsra.s32   q10, q0, #16    \n"
+                "vsra.s32   q11, q1, #16    \n"
+                "pld        [%0, #128]      \n"
+                "vld1.s16   {d2-d3}, [%0 :128]!\n"
+                "vsra.s32   q10, q2, #16    \n"
+                "vsra.s32   q11, q3, #16    \n"
+                "pld        [%1, #128]      \n"
+                "vld1.s16   {d6-d7}, [%1 :128]!\n"
+                "vshrn.s32  d20, q10, #2    \n"
+                "vshrn.s32  d21, q11, #2    \n"
+                "vqmovun.s16 d20, q10        \n"
+                "vst1.8     {d20}, [%2]!    \n"
+                "subs       %3, #1          \n"
+                "bne        0b              \n"
+                "sub        %0, #16         \n"
+                "sub        %1, #16         \n"
+                : "=r"(rows0p), // %0
+                "=r"(rows1p), // %1
+                "=r"(Dp),     // %2
+                "=r"(nn)      // %3
+                : "0"(rows0p),
+                "1"(rows1p),
+                "2"(Dp),
+                "3"(nn),
+                "r"(b0),      // %8
+                "r"(b1)       // %9
+                : "cc", "memory", "r4", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11", "q12"
+            );
         }
 #endif // __aarch64__
 #endif // __ARM_NEON
@@ -1593,50 +1643,50 @@ void resize_bilinear_c1(const unsigned char* src, int srcw, int srch, unsigned c
 #else
         if (nn > 0)
         {
-        asm volatile(
-            "vdup.s16   d16, %8         \n"
-            "mov        r4, #2          \n"
-            "vdup.s16   d17, %9         \n"
-            "vdup.s32   q12, r4         \n"
-            "pld        [%0, #128]      \n"
-            "vld1.s16   {d2-d3}, [%0 :128]!\n"
-            "pld        [%1, #128]      \n"
-            "vld1.s16   {d6-d7}, [%1 :128]!\n"
-            "0:                         \n"
-            "vmull.s16  q0, d2, d16     \n"
-            "vmull.s16  q1, d3, d16     \n"
-            "vorr.s32   q10, q12, q12   \n"
-            "vorr.s32   q11, q12, q12   \n"
-            "vmull.s16  q2, d6, d17     \n"
-            "vmull.s16  q3, d7, d17     \n"
-            "vsra.s32   q10, q0, #16    \n"
-            "vsra.s32   q11, q1, #16    \n"
-            "pld        [%0, #128]      \n"
-            "vld1.s32   {d2-d3}, [%0 :128]!\n"
-            "vsra.s32   q10, q2, #16    \n"
-            "vsra.s32   q11, q3, #16    \n"
-            "pld        [%1, #128]      \n"
-            "vld1.s32   {d6-d7}, [%1 :128]!\n"
-            "vshrn.s32  d20, q10, #2    \n"
-            "vshrn.s32  d21, q11, #2    \n"
-            "vqmovun.s16 d20, q10        \n"
-            "vst1.8     {d20}, [%2]!    \n"
-            "subs       %3, #1          \n"
-            "bne        0b              \n"
-            "sub        %0, #16         \n"
-            "sub        %1, #16         \n"
-            : "=r"(rows0p), // %0
-              "=r"(rows1p), // %1
-              "=r"(Dp),     // %2
-              "=r"(nn)      // %3
-            : "0"(rows0p),
-              "1"(rows1p),
-              "2"(Dp),
-              "3"(nn),
-              "r"(b0),      // %8
-              "r"(b1)       // %9
-            : "cc", "memory", "r4", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11", "q12"
-        );
+            asm volatile(
+                "vdup.s16   d16, %8         \n"
+                "mov        r4, #2          \n"
+                "vdup.s16   d17, %9         \n"
+                "vdup.s32   q12, r4         \n"
+                "pld        [%0, #128]      \n"
+                "vld1.s16   {d2-d3}, [%0 :128]!\n"
+                "pld        [%1, #128]      \n"
+                "vld1.s16   {d6-d7}, [%1 :128]!\n"
+                "0:                         \n"
+                "vmull.s16  q0, d2, d16     \n"
+                "vmull.s16  q1, d3, d16     \n"
+                "vorr.s32   q10, q12, q12   \n"
+                "vorr.s32   q11, q12, q12   \n"
+                "vmull.s16  q2, d6, d17     \n"
+                "vmull.s16  q3, d7, d17     \n"
+                "vsra.s32   q10, q0, #16    \n"
+                "vsra.s32   q11, q1, #16    \n"
+                "pld        [%0, #128]      \n"
+                "vld1.s32   {d2-d3}, [%0 :128]!\n"
+                "vsra.s32   q10, q2, #16    \n"
+                "vsra.s32   q11, q3, #16    \n"
+                "pld        [%1, #128]      \n"
+                "vld1.s32   {d6-d7}, [%1 :128]!\n"
+                "vshrn.s32  d20, q10, #2    \n"
+                "vshrn.s32  d21, q11, #2    \n"
+                "vqmovun.s16 d20, q10        \n"
+                "vst1.8     {d20}, [%2]!    \n"
+                "subs       %3, #1          \n"
+                "bne        0b              \n"
+                "sub        %0, #16         \n"
+                "sub        %1, #16         \n"
+                : "=r"(rows0p), // %0
+                "=r"(rows1p), // %1
+                "=r"(Dp),     // %2
+                "=r"(nn)      // %3
+                : "0"(rows0p),
+                "1"(rows1p),
+                "2"(Dp),
+                "3"(nn),
+                "r"(b0),      // %8
+                "r"(b1)       // %9
+                : "cc", "memory", "r4", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11", "q12"
+            );
         }
 #endif // __aarch64__
 #endif // __ARM_NEON
@@ -1880,50 +1930,50 @@ void resize_bilinear_c4(const unsigned char* src, int srcw, int srch, unsigned c
 #else
         if (nn > 0)
         {
-        asm volatile(
-            "vdup.s16   d16, %8         \n"
-            "mov        r4, #2          \n"
-            "vdup.s16   d17, %9         \n"
-            "vdup.s32   q12, r4         \n"
-            "pld        [%0, #128]      \n"
-            "vld1.s16   {d2-d3}, [%0 :128]!\n"
-            "pld        [%1, #128]      \n"
-            "vld1.s16   {d6-d7}, [%1 :128]!\n"
-            "0:                         \n"
-            "vmull.s16  q0, d2, d16     \n"
-            "vmull.s16  q1, d3, d16     \n"
-            "vorr.s32   q10, q12, q12   \n"
-            "vorr.s32   q11, q12, q12   \n"
-            "vmull.s16  q2, d6, d17     \n"
-            "vmull.s16  q3, d7, d17     \n"
-            "vsra.s32   q10, q0, #16    \n"
-            "vsra.s32   q11, q1, #16    \n"
-            "pld        [%0, #128]      \n"
-            "vld1.s32   {d2-d3}, [%0 :128]!\n"
-            "vsra.s32   q10, q2, #16    \n"
-            "vsra.s32   q11, q3, #16    \n"
-            "pld        [%1, #128]      \n"
-            "vld1.s32   {d6-d7}, [%1 :128]!\n"
-            "vshrn.s32  d20, q10, #2    \n"
-            "vshrn.s32  d21, q11, #2    \n"
-            "vqmovun.s16 d20, q10        \n"
-            "vst1.8     {d20}, [%2]!    \n"
-            "subs       %3, #1          \n"
-            "bne        0b              \n"
-            "sub        %0, #16         \n"
-            "sub        %1, #16         \n"
-            : "=r"(rows0p), // %0
-              "=r"(rows1p), // %1
-              "=r"(Dp),     // %2
-              "=r"(nn)      // %3
-            : "0"(rows0p),
-              "1"(rows1p),
-              "2"(Dp),
-              "3"(nn),
-              "r"(b0),      // %8
-              "r"(b1)       // %9
-            : "cc", "memory", "r4", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11", "q12"
-        );
+            asm volatile(
+                "vdup.s16   d16, %8         \n"
+                "mov        r4, #2          \n"
+                "vdup.s16   d17, %9         \n"
+                "vdup.s32   q12, r4         \n"
+                "pld        [%0, #128]      \n"
+                "vld1.s16   {d2-d3}, [%0 :128]!\n"
+                "pld        [%1, #128]      \n"
+                "vld1.s16   {d6-d7}, [%1 :128]!\n"
+                "0:                         \n"
+                "vmull.s16  q0, d2, d16     \n"
+                "vmull.s16  q1, d3, d16     \n"
+                "vorr.s32   q10, q12, q12   \n"
+                "vorr.s32   q11, q12, q12   \n"
+                "vmull.s16  q2, d6, d17     \n"
+                "vmull.s16  q3, d7, d17     \n"
+                "vsra.s32   q10, q0, #16    \n"
+                "vsra.s32   q11, q1, #16    \n"
+                "pld        [%0, #128]      \n"
+                "vld1.s32   {d2-d3}, [%0 :128]!\n"
+                "vsra.s32   q10, q2, #16    \n"
+                "vsra.s32   q11, q3, #16    \n"
+                "pld        [%1, #128]      \n"
+                "vld1.s32   {d6-d7}, [%1 :128]!\n"
+                "vshrn.s32  d20, q10, #2    \n"
+                "vshrn.s32  d21, q11, #2    \n"
+                "vqmovun.s16 d20, q10        \n"
+                "vst1.8     {d20}, [%2]!    \n"
+                "subs       %3, #1          \n"
+                "bne        0b              \n"
+                "sub        %0, #16         \n"
+                "sub        %1, #16         \n"
+                : "=r"(rows0p), // %0
+                "=r"(rows1p), // %1
+                "=r"(Dp),     // %2
+                "=r"(nn)      // %3
+                : "0"(rows0p),
+                "1"(rows1p),
+                "2"(Dp),
+                "3"(nn),
+                "r"(b0),      // %8
+                "r"(b1)       // %9
+                : "cc", "memory", "r4", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11", "q12"
+            );
         }
 #endif // __aarch64__
 #endif // __ARM_NEON

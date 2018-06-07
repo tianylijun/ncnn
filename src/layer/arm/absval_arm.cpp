@@ -18,7 +18,8 @@
 #include <arm_neon.h>
 #endif // __ARM_NEON
 
-namespace ncnn {
+namespace ncnn
+{
 
 DEFINE_LAYER_CREATOR(AbsVal_arm)
 
@@ -45,37 +46,37 @@ int AbsVal_arm::forward_inplace(Mat& bottom_top_blob) const
 #if __aarch64__
         if (nn > 0)
         {
-        asm volatile(
-            "0:                               \n"
-            "prfm       pldl1keep, [%1, #128] \n"
-            "ld1        {v0.4s}, [%1]         \n"
-            "fabs       v0.4s, v0.4s          \n"
-            "subs       %w0, %w0, #1          \n"
-            "st1        {v0.4s}, [%1], #16    \n"
-            "bne        0b                    \n"
-            : "=r"(nn),     // %0
-              "=r"(ptr)     // %1
-            : "0"(nn),
-              "1"(ptr)
-            : "cc", "memory", "v0"
-        );
+            asm volatile(
+                "0:                               \n"
+                "prfm       pldl1keep, [%1, #128] \n"
+                "ld1        {v0.4s}, [%1]         \n"
+                "fabs       v0.4s, v0.4s          \n"
+                "subs       %w0, %w0, #1          \n"
+                "st1        {v0.4s}, [%1], #16    \n"
+                "bne        0b                    \n"
+                : "=r"(nn),     // %0
+                "=r"(ptr)     // %1
+                : "0"(nn),
+                "1"(ptr)
+                : "cc", "memory", "v0"
+            );
         }
 #else
         if (nn > 0)
         {
-        asm volatile(
-            "0:                             \n"
-            "vld1.f32   {d0-d1}, [%1]       \n"
-            "vabs.f32   q0, q0              \n"
-            "subs       %0, #1              \n"
-            "vst1.f32   {d0-d1}, [%1]!      \n"
-            "bne        0b                  \n"
-            : "=r"(nn),     // %0
-              "=r"(ptr)     // %1
-            : "0"(nn),
-              "1"(ptr)
-            : "cc", "memory", "q0"
-        );
+            asm volatile(
+                "0:                             \n"
+                "vld1.f32   {d0-d1}, [%1]       \n"
+                "vabs.f32   q0, q0              \n"
+                "subs       %0, #1              \n"
+                "vst1.f32   {d0-d1}, [%1]!      \n"
+                "bne        0b                  \n"
+                : "=r"(nn),     // %0
+                "=r"(ptr)     // %1
+                : "0"(nn),
+                "1"(ptr)
+                : "cc", "memory", "q0"
+            );
         }
 #endif // __aarch64__
 #endif // __ARM_NEON

@@ -271,11 +271,12 @@ static int detect_fasterrcnn(const cv::Mat& bgr, std::vector<Object>& objects)
 static void draw_objects(const cv::Mat& bgr, const std::vector<Object>& objects)
 {
     static const char* class_names[] = {"background",
-        "aeroplane", "bicycle", "bird", "boat",
-        "bottle", "bus", "car", "cat", "chair",
-        "cow", "diningtable", "dog", "horse",
-        "motorbike", "person", "pottedplant",
-        "sheep", "sofa", "train", "tvmonitor"};
+                                        "aeroplane", "bicycle", "bird", "boat",
+                                        "bottle", "bus", "car", "cat", "chair",
+                                        "cow", "diningtable", "dog", "horse",
+                                        "motorbike", "person", "pottedplant",
+                                        "sheep", "sofa", "train", "tvmonitor"
+                                       };
 
     cv::Mat image = bgr.clone();
 

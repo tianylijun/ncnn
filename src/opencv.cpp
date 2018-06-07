@@ -18,7 +18,8 @@
 
 #include <stdio.h>
 
-namespace cv {
+namespace cv
+{
 
 Mat imread(const std::string& path, int flags)
 {

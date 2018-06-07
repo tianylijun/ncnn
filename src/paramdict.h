@@ -22,7 +22,8 @@
 // at most 20 parameters
 #define NCNN_MAX_PARAM_COUNT 20
 
-namespace ncnn {
+namespace ncnn
+{
 
 class Net;
 class ParamDict
@@ -62,7 +63,11 @@ protected:
     struct
     {
         int loaded;
-        union { int i; float f; };
+        union
+        {
+            int i;
+            float f;
+        };
         Mat v;
     } params[NCNN_MAX_PARAM_COUNT];
 };

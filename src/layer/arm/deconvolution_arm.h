@@ -17,7 +17,8 @@
 
 #include "deconvolution.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class Deconvolution_arm : public Deconvolution
 {

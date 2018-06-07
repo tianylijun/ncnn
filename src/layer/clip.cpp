@@ -16,7 +16,8 @@
 
 #include <float.h>
 
-namespace ncnn {
+namespace ncnn
+{
 
 DEFINE_LAYER_CREATOR(Clip)
 

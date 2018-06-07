@@ -17,7 +17,8 @@
 
 #include "innerproduct.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class InnerProduct_arm : public InnerProduct
 {

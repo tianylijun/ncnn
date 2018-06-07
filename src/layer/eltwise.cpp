@@ -15,7 +15,8 @@
 #include "eltwise.h"
 #include <algorithm>
 
-namespace ncnn {
+namespace ncnn
+{
 
 DEFINE_LAYER_CREATOR(Eltwise)
 

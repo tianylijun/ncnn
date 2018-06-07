@@ -15,7 +15,8 @@
 #include "embed.h"
 #include <string.h>
 
-namespace ncnn {
+namespace ncnn
+{
 
 DEFINE_LAYER_CREATOR(Embed)
 

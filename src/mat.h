@@ -21,7 +21,8 @@
 #include <arm_neon.h>
 #endif
 
-namespace ncnn {
+namespace ncnn
+{
 
 // the three dimension matrix
 class Mat
@@ -230,7 +231,12 @@ static inline void fastFree(void* ptr)
 #  include <intrin.h>
 #  define NCNN_XADD(addr, delta) (int)_InterlockedExchangeAdd((long volatile*)addr, delta)
 #else
-static inline void NCNN_XADD(int* addr, int delta) { int tmp = *addr; *addr += delta; return tmp; }
+static inline void NCNN_XADD(int* addr, int delta)
+{
+    int tmp = *addr;
+    *addr += delta;
+    return tmp;
+}
 #endif
 
 inline Mat::Mat()
@@ -345,34 +351,34 @@ inline void Mat::fill(float _v)
 #if __aarch64__
     if (nn > 0)
     {
-    asm volatile (
-        "0:                             \n"
-        "subs       %w0, %w0, #1        \n"
-        "st1        {%4.4s}, [%1], #16  \n"
-        "bne        0b                  \n"
-        : "=r"(nn),     // %0
-          "=r"(ptr)     // %1
-        : "0"(nn),
-          "1"(ptr),
-          "w"(_c)       // %4
-        : "cc", "memory"
-    );
+        asm volatile (
+            "0:                             \n"
+            "subs       %w0, %w0, #1        \n"
+            "st1        {%4.4s}, [%1], #16  \n"
+            "bne        0b                  \n"
+            : "=r"(nn),     // %0
+            "=r"(ptr)     // %1
+            : "0"(nn),
+            "1"(ptr),
+            "w"(_c)       // %4
+            : "cc", "memory"
+        );
     }
 #else
     if (nn > 0)
     {
-    asm volatile(
-        "0:                             \n"
-        "subs       %0, #1              \n"
-        "vst1.f32   {%e4-%f4}, [%1 :128]!\n"
-        "bne        0b                  \n"
-        : "=r"(nn),     // %0
-          "=r"(ptr)     // %1
-        : "0"(nn),
-          "1"(ptr),
-          "w"(_c)       // %4
-        : "cc", "memory"
-    );
+        asm volatile(
+            "0:                             \n"
+            "subs       %0, #1              \n"
+            "vst1.f32   {%e4-%f4}, [%1 :128]!\n"
+            "bne        0b                  \n"
+            : "=r"(nn),     // %0
+            "=r"(ptr)     // %1
+            : "0"(nn),
+            "1"(ptr),
+            "w"(_c)       // %4
+            : "cc", "memory"
+        );
     }
 #endif // __aarch64__
 #endif // __ARM_NEON

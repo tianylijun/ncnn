@@ -17,7 +17,8 @@
 
 #include "prelu.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class PReLU_arm : public PReLU
 {

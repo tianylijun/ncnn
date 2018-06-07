@@ -17,7 +17,8 @@
 
 #include "pooling.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class Pooling_arm : public Pooling
 {

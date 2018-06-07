@@ -17,7 +17,8 @@
 
 #include "sigmoid.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class Sigmoid_arm : public Sigmoid
 {

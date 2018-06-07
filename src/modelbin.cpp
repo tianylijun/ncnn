@@ -19,7 +19,8 @@
 #include <vector>
 #include "platform.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 Mat ModelBin::load(int w, int h, int type) const
 {

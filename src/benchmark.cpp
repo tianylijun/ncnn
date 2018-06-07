@@ -27,7 +27,8 @@
 #include "layer/convolution.h"
 #endif // NCNN_BENCHMARK
 
-namespace ncnn {
+namespace ncnn
+{
 
 #ifdef _WIN32
 double get_current_time()
@@ -81,7 +82,7 @@ void benchmark(const Layer* layer, const Mat& bottom_blob, Mat& top_blob, double
                 ((Convolution*)layer)->kernel_h,
                 ((Convolution*)layer)->stride_w,
                 ((Convolution*)layer)->stride_h
-        );
+               );
     }
     fprintf(stderr, "\n");
 }

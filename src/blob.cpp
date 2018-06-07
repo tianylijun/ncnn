@@ -14,7 +14,8 @@
 
 #include "blob.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 Blob::Blob()
 {

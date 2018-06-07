@@ -25,7 +25,8 @@ TEST(convolution, forward)
     convolution_layer.weight_data_size = 9;
 
     // input & output
-    float_t in[] = {
+    float_t in[] =
+    {
         0.0f, 1.0f, 2.0f, 3.0f, 4.0f,
         1.0f, 2.0f, 3.0f, 4.0f, 5.0f,
         2.0f, 3.0f, 4.0f, 5.0f, 6.0f,
@@ -33,20 +34,23 @@ TEST(convolution, forward)
         4.0f, 5.0f, 6.0f, 7.0f, 8.0f
     };
 
-    float_t expected_out[] = {
+    float_t expected_out[] =
+    {
         9.5f, 18.5f,
         18.5f, 27.5f
     };
 
 
     // weights & bias
-    float_t w[] = {
+    float_t w[] =
+    {
         0.5f, 0.5f, 0.5f,
         0.5f, 0.5f, 0.5f,
         0.5f, 0.5f, 0.5f
     };
 
-    float_t b[] = {
+    float_t b[] =
+    {
         0.5f
     };
 

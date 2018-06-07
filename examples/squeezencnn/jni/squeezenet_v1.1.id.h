@@ -1,6 +1,7 @@
 #ifndef NCNN_INCLUDE_GUARD_squeezenet_v1_1_id_h
 #define NCNN_INCLUDE_GUARD_squeezenet_v1_1_id_h
-namespace squeezenet_v1_1_param_id {
+namespace squeezenet_v1_1_param_id
+{
 const int LAYER_data = 0;
 const int BLOB_data = 0;
 const int LAYER_conv1 = 1;

@@ -391,12 +391,17 @@ int main(int argc, char** argv)
 
         const onnx::TensorProto& M = binaryop_weights[input_name];
 
-        if (M.dims_size() == 1) {
+        if (M.dims_size() == 1)
+        {
             fprintf(pp, " 0=%d", (int)M.dims(0));
-        } else if (M.dims_size() == 2) {
+        }
+        else if (M.dims_size() == 2)
+        {
             fprintf(pp, " 0=%d", (int)M.dims(1));
             fprintf(pp, " 1=%d", (int)M.dims(0));
-        } else if (M.dims_size() == 3) {
+        }
+        else if (M.dims_size() == 3)
+        {
             fprintf(pp, " 0=%d", (int)M.dims(2));
             fprintf(pp, " 1=%d", (int)M.dims(1));
             fprintf(pp, " 2=%d", (int)M.dims(0));
@@ -477,18 +482,24 @@ int main(int argc, char** argv)
         else if (op == "Conv")
         {
             int group = get_node_attr_i(node, "group", 1);
-            if (group > 1) {
+            if (group > 1)
+            {
                 fprintf(pp, "%-16s", "ConvolutionDepthWise");
-            } else {
+            }
+            else
+            {
                 fprintf(pp, "%-16s", "Convolution");
             }
         }
         else if (op == "ConvTranspose")
         {
             int group = get_node_attr_i(node, "group", 1);
-            if (group > 1) {
+            if (group > 1)
+            {
                 fprintf(pp, "%-16s", "DeconvolutionDepthWise");
-            } else {
+            }
+            else
+            {
                 fprintf(pp, "%-16s", "Deconvolution");
             }
         }
@@ -640,26 +651,37 @@ int main(int argc, char** argv)
 
             fprintf(pp, " 0=%d", pool);
 
-            if (kernel_shape.size() == 1) {
+            if (kernel_shape.size() == 1)
+            {
                 fprintf(pp, " 1=%d", kernel_shape[0]);
-            } else if (kernel_shape.size() == 2) {
+            }
+            else if (kernel_shape.size() == 2)
+            {
                 fprintf(pp, " 1=%d", kernel_shape[1]);
                 fprintf(pp, " 11=%d", kernel_shape[0]);
             }
 
-            if (strides.size() == 1) {
+            if (strides.size() == 1)
+            {
                 fprintf(pp, " 2=%d", strides[0]);
-            } else if (strides.size() == 2) {
+            }
+            else if (strides.size() == 2)
+            {
                 fprintf(pp, " 2=%d", strides[1]);
                 fprintf(pp, " 12=%d", strides[0]);
             }
 
-            if (pads.size() == 1) {
+            if (pads.size() == 1)
+            {
                 fprintf(pp, " 3=%d", pads[0]);
-            } else if (pads.size() == 2) {
+            }
+            else if (pads.size() == 2)
+            {
                 fprintf(pp, " 3=%d", pads[1]);
                 fprintf(pp, " 13=%d", pads[0]);
-            } else if (pads.size() == 4) {
+            }
+            else if (pads.size() == 4)
+            {
                 fprintf(pp, " 3=%d", pads[1]);
                 fprintf(pp, " 13=%d", pads[0]);
                 fprintf(pp, " 14=%d", pads[3]);
@@ -714,14 +736,21 @@ int main(int argc, char** argv)
             {
                 const onnx::TensorProto& M = binaryop_weights[name];
 
-                if (M.dims_size() == 1) {
+                if (M.dims_size() == 1)
+                {
                     fprintf(pp, " 0=%d", (int)M.dims(0));
-                } else if (M.dims_size() == 2) {
+                }
+                else if (M.dims_size() == 2)
+                {
                     fprintf(pp, " 0=%d", (int)M.dims(1));
-                } else if (M.dims_size() == 3) {
+                }
+                else if (M.dims_size() == 3)
+                {
                     fprintf(pp, " 0=%d", (int)M.dims(2));
                     fprintf(pp, " 1=%d", (int)M.dims(1));
-                } else if (M.dims_size() == 4) {
+                }
+                else if (M.dims_size() == 4)
+                {
                     fprintf(pp, " 0=%d", (int)M.dims(3));
                     fprintf(pp, " 1=%d", (int)M.dims(2));
                     fprintf(pp, " 2=%d", (int)M.dims(1));
@@ -746,23 +775,32 @@ int main(int argc, char** argv)
 
             fprintf(pp, " 0=%d", num_filter);
 
-            if (kernel_shape.size() == 1) {
+            if (kernel_shape.size() == 1)
+            {
                 fprintf(pp, " 1=%d", kernel_shape[0]);
-            } else if (kernel_shape.size() == 2) {
+            }
+            else if (kernel_shape.size() == 2)
+            {
                 fprintf(pp, " 1=%d", kernel_shape[1]);
                 fprintf(pp, " 11=%d", kernel_shape[0]);
             }
 
-            if (dilations.size() == 1) {
+            if (dilations.size() == 1)
+            {
                 fprintf(pp, " 2=%d", dilations[0]);
-            } else if (dilations.size() == 2) {
+            }
+            else if (dilations.size() == 2)
+            {
                 fprintf(pp, " 2=%d", dilations[1]);
                 fprintf(pp, " 12=%d", dilations[0]);
             }
 
-            if (strides.size() == 1) {
+            if (strides.size() == 1)
+            {
                 fprintf(pp, " 3=%d", strides[0]);
-            } else if (strides.size() == 2) {
+            }
+            else if (strides.size() == 2)
+            {
                 fprintf(pp, " 3=%d", strides[1]);
                 fprintf(pp, " 13=%d", strides[0]);
             }
@@ -775,16 +813,21 @@ int main(int argc, char** argv)
             else
             {
 
-            if (pads.size() == 1) {
-                fprintf(pp, " 4=%d", pads[0]);
-            } else if (pads.size() == 2) {
-                fprintf(pp, " 4=%d", pads[1]);
-                fprintf(pp, " 14=%d", pads[0]);
-            } else if (pads.size() == 4) {
-                fprintf(pp, " 4=%d", pads[1]);
-                fprintf(pp, " 14=%d", pads[0]);
-                // TODO hpad2=pads[2]   wpad2=pads[3]
-            }
+                if (pads.size() == 1)
+                {
+                    fprintf(pp, " 4=%d", pads[0]);
+                }
+                else if (pads.size() == 2)
+                {
+                    fprintf(pp, " 4=%d", pads[1]);
+                    fprintf(pp, " 14=%d", pads[0]);
+                }
+                else if (pads.size() == 4)
+                {
+                    fprintf(pp, " 4=%d", pads[1]);
+                    fprintf(pp, " 14=%d", pads[0]);
+                    // TODO hpad2=pads[2]   wpad2=pads[3]
+                }
 
             }
 
@@ -792,7 +835,8 @@ int main(int argc, char** argv)
 
             fprintf(pp, " 6=%d", get_tensor_proto_data_size(W));
 
-            if (group > 1) {
+            if (group > 1)
+            {
                 fprintf(pp, " 7=%d", group);
             }
 
@@ -825,23 +869,32 @@ int main(int argc, char** argv)
 
             fprintf(pp, " 0=%d", num_filter);
 
-            if (kernel_shape.size() == 1) {
+            if (kernel_shape.size() == 1)
+            {
                 fprintf(pp, " 1=%d", kernel_shape[0]);
-            } else if (kernel_shape.size() == 2) {
+            }
+            else if (kernel_shape.size() == 2)
+            {
                 fprintf(pp, " 1=%d", kernel_shape[1]);
                 fprintf(pp, " 11=%d", kernel_shape[0]);
             }
 
-            if (dilations.size() == 1) {
+            if (dilations.size() == 1)
+            {
                 fprintf(pp, " 2=%d", dilations[0]);
-            } else if (dilations.size() == 2) {
+            }
+            else if (dilations.size() == 2)
+            {
                 fprintf(pp, " 2=%d", dilations[1]);
                 fprintf(pp, " 12=%d", dilations[0]);
             }
 
-            if (strides.size() == 1) {
+            if (strides.size() == 1)
+            {
                 fprintf(pp, " 3=%d", strides[0]);
-            } else if (strides.size() == 2) {
+            }
+            else if (strides.size() == 2)
+            {
                 fprintf(pp, " 3=%d", strides[1]);
                 fprintf(pp, " 13=%d", strides[0]);
             }
@@ -854,16 +907,21 @@ int main(int argc, char** argv)
             else
             {
 
-            if (pads.size() == 1) {
-                fprintf(pp, " 4=%d", pads[0]);
-            } else if (pads.size() == 2) {
-                fprintf(pp, " 4=%d", pads[1]);
-                fprintf(pp, " 14=%d", pads[0]);
-            } else if (pads.size() == 4) {
-                fprintf(pp, " 4=%d", pads[1]);
-                fprintf(pp, " 14=%d", pads[0]);
-                // TODO hpad2=pads[2]   wpad2=pads[3]
-            }
+                if (pads.size() == 1)
+                {
+                    fprintf(pp, " 4=%d", pads[0]);
+                }
+                else if (pads.size() == 2)
+                {
+                    fprintf(pp, " 4=%d", pads[1]);
+                    fprintf(pp, " 14=%d", pads[0]);
+                }
+                else if (pads.size() == 4)
+                {
+                    fprintf(pp, " 4=%d", pads[1]);
+                    fprintf(pp, " 14=%d", pads[0]);
+                    // TODO hpad2=pads[2]   wpad2=pads[3]
+                }
 
             }
 
@@ -871,7 +929,8 @@ int main(int argc, char** argv)
 
             fprintf(pp, " 6=%d", get_tensor_proto_data_size(W));
 
-            if (group > 1) {
+            if (group > 1)
+            {
                 fprintf(pp, " 7=%d", group);
             }
 
@@ -1024,18 +1083,27 @@ int main(int argc, char** argv)
         {
             std::vector<int> shape = get_node_attr_ai(node, "shape");
 
-            if (shape.size() == 1) {
+            if (shape.size() == 1)
+            {
                 fprintf(pp, " 0=%d", shape[0]);// should never reach here
-            } else if (shape.size() == 2) {
+            }
+            else if (shape.size() == 2)
+            {
                 fprintf(pp, " 0=%d", shape[1]);
-            } else if (shape.size() == 3) {
+            }
+            else if (shape.size() == 3)
+            {
                 fprintf(pp, " 0=%d", shape[2]);
                 fprintf(pp, " 1=%d", shape[1]);
-            } else if (shape.size() == 4) {
+            }
+            else if (shape.size() == 4)
+            {
                 fprintf(pp, " 0=%d", shape[3]);
                 fprintf(pp, " 1=%d", shape[2]);
                 fprintf(pp, " 2=%d", shape[1]);
-            } else if (shape.size() == 5) {
+            }
+            else if (shape.size() == 5)
+            {
                 fprintf(pp, " 0=%d", shape[4] * shape[3]);
                 fprintf(pp, " 1=%d", shape[2]);
                 fprintf(pp, " 2=%d", shape[1]);
@@ -1055,7 +1123,8 @@ int main(int argc, char** argv)
         {
             std::vector<int> perm = get_node_attr_ai(node, "perm");
 
-            if (perm.size() == 4) {
+            if (perm.size() == 4)
+            {
                 if (perm[1] == 1 && perm[2] == 2 && perm[3] == 3)
                     fprintf(pp, " 0=0");// w h c
                 else if (perm[1] == 1 && perm[2] == 3 && perm[3] == 2)
@@ -1068,7 +1137,9 @@ int main(int argc, char** argv)
                     fprintf(pp, " 0=4");// h c w
                 else if (perm[1] == 3 && perm[2] == 2 && perm[3] == 1)
                     fprintf(pp, " 0=5");// c h w
-            } else if (perm.size() == 5) {
+            }
+            else if (perm.size() == 5)
+            {
                 if (perm[1] == 1 && perm[2] == 2 && perm[3] == 3 && perm[4] == 4)
                     fprintf(pp, " 0=0");// wx h c
                 else if (perm[1] == 1 && perm[2] == 3 && perm[3] == 4 && perm[4] == 2)

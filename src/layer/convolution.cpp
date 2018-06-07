@@ -16,7 +16,8 @@
 
 #include "layer_type.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 DEFINE_LAYER_CREATOR(Convolution)
 

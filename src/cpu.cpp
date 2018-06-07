@@ -37,7 +37,8 @@
 #endif
 #endif
 
-namespace ncnn {
+namespace ncnn
+{
 
 #ifdef __ANDROID__
 
@@ -53,7 +54,11 @@ static unsigned int get_elf_hwcap_from_proc_self_auxv()
 #define AT_HWCAP 16
 #define AT_HWCAP2 26
 
-    struct { unsigned int tag; unsigned int value; } entry;
+    struct
+    {
+        unsigned int tag;
+        unsigned int value;
+    } entry;
 
     unsigned int result = 0;
     while (!feof(fp))
@@ -275,10 +280,10 @@ static int set_sched_affinity(const std::vector<int>& cpuids)
     // ref http://stackoverflow.com/questions/16319725/android-set-thread-affinity
 #define CPU_SETSIZE 1024
 #define __NCPUBITS  (8 * sizeof (unsigned long))
-typedef struct
-{
-   unsigned long __bits[CPU_SETSIZE / __NCPUBITS];
-} cpu_set_t;
+    typedef struct
+    {
+        unsigned long __bits[CPU_SETSIZE / __NCPUBITS];
+    } cpu_set_t;
 
 #define CPU_SET(cpu, cpusetp) \
   ((cpusetp)->__bits[(cpu)/__NCPUBITS] |= (1UL << ((cpu) % __NCPUBITS)))

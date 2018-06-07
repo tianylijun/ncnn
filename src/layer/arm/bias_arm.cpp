@@ -18,7 +18,8 @@
 #include <arm_neon.h>
 #endif // __ARM_NEON
 
-namespace ncnn {
+namespace ncnn
+{
 
 DEFINE_LAYER_CREATOR(Bias_arm)
 

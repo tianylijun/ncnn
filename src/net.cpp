@@ -28,7 +28,8 @@
 #include "benchmark.h"
 #endif // NCNN_BENCHMARK
 
-namespace ncnn {
+namespace ncnn
+{
 
 Net::Net()
 {
@@ -218,6 +219,12 @@ int Net::load_param(FILE* fp)
         layers[layer_index] = layer;
 
         layer_index++;
+    }
+
+    for (size_t i=0; i<blobs.size(); i++)
+    {
+        const Blob& blob = blobs[i];
+        printf("[%lu]%s\n", i, blob.name.c_str());
     }
 
     return 0;
@@ -550,13 +557,14 @@ int Net::find_blob_index_by_name(const char* name) const
     for (size_t i=0; i<blobs.size(); i++)
     {
         const Blob& blob = blobs[i];
+        //printf("[%lu]%s\n", i, blob.name.c_str());
         if (blob.name == name)
         {
             return i;
         }
     }
 
-    fprintf(stderr, "find_blob_index_by_name %s failed\n", name);
+    //fprintf(stderr, "find_blob_index_by_name %s failed\n", name);
     return -1;
 }
 
@@ -850,7 +858,7 @@ int Extractor::extract(const char* blob_name, Mat& feat)
 
     int ret = 0;
 
-    if (blob_mats[blob_index].dims == 0)
+    if (1)//(blob_mats[blob_index].dims == 0)
     {
         int layer_index = net->blobs[blob_index].producer;
 

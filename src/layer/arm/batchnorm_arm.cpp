@@ -18,7 +18,8 @@
 #include <arm_neon.h>
 #endif // __ARM_NEON
 
-namespace ncnn {
+namespace ncnn
+{
 
 DEFINE_LAYER_CREATOR(BatchNorm_arm)
 
@@ -57,48 +58,48 @@ int BatchNorm_arm::forward_inplace(Mat& bottom_top_blob) const
 #if __aarch64__
         if (nn > 0)
         {
-        asm volatile(
-            "dup        v1.4s, %w4             \n"
-            "dup        v2.4s, %w5             \n"
-            "0:                                \n"
-            "prfm       pldl1keep, [%1, #128]  \n"
-            "ld1        {v0.4s}, [%1]          \n"
-            "orr        v3.16b, v1.16b, v1.16b \n"
-            "fmla       v3.4s, v0.4s, v2.4s    \n"
-            "subs       %w0, %w0, #1           \n"
-            "st1        {v3.4s}, [%1], #16     \n"
-            "bne        0b                     \n"
-            : "=r"(nn),     // %0
-              "=r"(ptr)     // %1
-            : "0"(nn),
-              "1"(ptr),
-              "r"(a),       // %4
-              "r"(b)        // %5
-            : "cc", "memory", "v0", "v1", "v2", "v3"
-        );
+            asm volatile(
+                "dup        v1.4s, %w4             \n"
+                "dup        v2.4s, %w5             \n"
+                "0:                                \n"
+                "prfm       pldl1keep, [%1, #128]  \n"
+                "ld1        {v0.4s}, [%1]          \n"
+                "orr        v3.16b, v1.16b, v1.16b \n"
+                "fmla       v3.4s, v0.4s, v2.4s    \n"
+                "subs       %w0, %w0, #1           \n"
+                "st1        {v3.4s}, [%1], #16     \n"
+                "bne        0b                     \n"
+                : "=r"(nn),     // %0
+                "=r"(ptr)     // %1
+                : "0"(nn),
+                "1"(ptr),
+                "r"(a),       // %4
+                "r"(b)        // %5
+                : "cc", "memory", "v0", "v1", "v2", "v3"
+            );
         }
 #else
         if (nn > 0)
         {
-        asm volatile(
-            "vdup.f32   q1, %4              \n"
-            "vdup.f32   q2, %5              \n"
-            "0:                             \n"
-            "pld        [%1, #128]          \n"
-            "vld1.f32   {d0-d1}, [%1 :128]  \n"
-            "vorr.32    q3, q1, q1          \n"
-            "vmla.f32   q3, q0, q2          \n"
-            "subs       %0, #1              \n"
-            "vst1.f32   {d6-d7}, [%1 :128]! \n"
-            "bne        0b                  \n"
-            : "=r"(nn),     // %0
-              "=r"(ptr)     // %1
-            : "0"(nn),
-              "1"(ptr),
-              "r"(a),       // %4
-              "r"(b)        // %5
-            : "cc", "memory", "q0", "q1", "q2", "q3"
-        );
+            asm volatile(
+                "vdup.f32   q1, %4              \n"
+                "vdup.f32   q2, %5              \n"
+                "0:                             \n"
+                "pld        [%1, #128]          \n"
+                "vld1.f32   {d0-d1}, [%1 :128]  \n"
+                "vorr.32    q3, q1, q1          \n"
+                "vmla.f32   q3, q0, q2          \n"
+                "subs       %0, #1              \n"
+                "vst1.f32   {d6-d7}, [%1 :128]! \n"
+                "bne        0b                  \n"
+                : "=r"(nn),     // %0
+                "=r"(ptr)     // %1
+                : "0"(nn),
+                "1"(ptr),
+                "r"(a),       // %4
+                "r"(b)        // %5
+                : "cc", "memory", "q0", "q1", "q2", "q3"
+            );
         }
 #endif // __aarch64__
 #endif // __ARM_NEON

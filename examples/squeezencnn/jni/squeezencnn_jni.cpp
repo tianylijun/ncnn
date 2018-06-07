@@ -71,110 +71,110 @@ static std::vector<std::string> split_string(const std::string& str, const std::
 extern "C" {
 
 // public native boolean Init(byte[] param, byte[] bin, byte[] words);
-JNIEXPORT jboolean JNICALL Java_com_tencent_squeezencnn_SqueezeNcnn_Init(JNIEnv* env, jobject thiz, jbyteArray param, jbyteArray bin, jbyteArray words)
-{
-    // init param
+    JNIEXPORT jboolean JNICALL Java_com_tencent_squeezencnn_SqueezeNcnn_Init(JNIEnv* env, jobject thiz, jbyteArray param, jbyteArray bin, jbyteArray words)
     {
-        int len = env->GetArrayLength(param);
-        squeezenet_param.resize(len);
-        env->GetByteArrayRegion(param, 0, len, (jbyte*)squeezenet_param.data());
-        int ret = squeezenet.load_param(squeezenet_param.data());
-        __android_log_print(ANDROID_LOG_DEBUG, "SqueezeNcnn", "load_param %d %d", ret, len);
-    }
+        // init param
+        {
+            int len = env->GetArrayLength(param);
+            squeezenet_param.resize(len);
+            env->GetByteArrayRegion(param, 0, len, (jbyte*)squeezenet_param.data());
+            int ret = squeezenet.load_param(squeezenet_param.data());
+            __android_log_print(ANDROID_LOG_DEBUG, "SqueezeNcnn", "load_param %d %d", ret, len);
+        }
 
-    // init bin
-    {
-        int len = env->GetArrayLength(bin);
-        squeezenet_bin.resize(len);
-        env->GetByteArrayRegion(bin, 0, len, (jbyte*)squeezenet_bin.data());
-        int ret = squeezenet.load_model(squeezenet_bin.data());
-        __android_log_print(ANDROID_LOG_DEBUG, "SqueezeNcnn", "load_model %d %d", ret, len);
-    }
+        // init bin
+        {
+            int len = env->GetArrayLength(bin);
+            squeezenet_bin.resize(len);
+            env->GetByteArrayRegion(bin, 0, len, (jbyte*)squeezenet_bin.data());
+            int ret = squeezenet.load_model(squeezenet_bin.data());
+            __android_log_print(ANDROID_LOG_DEBUG, "SqueezeNcnn", "load_model %d %d", ret, len);
+        }
 
-    // init words
-    {
-        int len = env->GetArrayLength(words);
-        std::string words_buffer;
-        words_buffer.resize(len);
-        env->GetByteArrayRegion(words, 0, len, (jbyte*)words_buffer.data());
-        squeezenet_words = split_string(words_buffer, "\n");
-    }
+        // init words
+        {
+            int len = env->GetArrayLength(words);
+            std::string words_buffer;
+            words_buffer.resize(len);
+            env->GetByteArrayRegion(words, 0, len, (jbyte*)words_buffer.data());
+            squeezenet_words = split_string(words_buffer, "\n");
+        }
 
-    return JNI_TRUE;
-}
+        return JNI_TRUE;
+    }
 
 // public native String Detect(Bitmap bitmap);
-JNIEXPORT jstring JNICALL Java_com_tencent_squeezencnn_SqueezeNcnn_Detect(JNIEnv* env, jobject thiz, jobject bitmap)
-{
-    bench_start();
-
-    // ncnn from bitmap
-    ncnn::Mat in;
+    JNIEXPORT jstring JNICALL Java_com_tencent_squeezencnn_SqueezeNcnn_Detect(JNIEnv* env, jobject thiz, jobject bitmap)
     {
-        AndroidBitmapInfo info;
-        AndroidBitmap_getInfo(env, bitmap, &info);
-        int width = info.width;
-        int height = info.height;
-        if (width != 227 || height != 227)
-            return NULL;
-        if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888)
-            return NULL;
+        bench_start();
 
-        void* indata;
-        AndroidBitmap_lockPixels(env, bitmap, &indata);
-
-        in = ncnn::Mat::from_pixels((const unsigned char*)indata, ncnn::Mat::PIXEL_RGBA2BGR, width, height);
-
-        AndroidBitmap_unlockPixels(env, bitmap);
-    }
-
-    // squeezenet
-    std::vector<float> cls_scores;
-    {
-        const float mean_vals[3] = {104.f, 117.f, 123.f};
-        in.substract_mean_normalize(mean_vals, 0);
-
-        ncnn::Extractor ex = squeezenet.create_extractor();
-        ex.set_light_mode(true);
-        ex.set_num_threads(4);
-
-        ex.input(squeezenet_v1_1_param_id::BLOB_data, in);
-
-        ncnn::Mat out;
-        ex.extract(squeezenet_v1_1_param_id::BLOB_prob, out);
-
-        cls_scores.resize(out.w);
-        for (int j=0; j<out.w; j++)
+        // ncnn from bitmap
+        ncnn::Mat in;
         {
-            cls_scores[j] = out[j];
-        }
-    }
+            AndroidBitmapInfo info;
+            AndroidBitmap_getInfo(env, bitmap, &info);
+            int width = info.width;
+            int height = info.height;
+            if (width != 227 || height != 227)
+                return NULL;
+            if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888)
+                return NULL;
 
-    // return top class
-    int top_class = 0;
-    float max_score = 0.f;
-    for (size_t i=0; i<cls_scores.size(); i++)
-    {
-        float s = cls_scores[i];
+            void* indata;
+            AndroidBitmap_lockPixels(env, bitmap, &indata);
+
+            in = ncnn::Mat::from_pixels((const unsigned char*)indata, ncnn::Mat::PIXEL_RGBA2BGR, width, height);
+
+            AndroidBitmap_unlockPixels(env, bitmap);
+        }
+
+        // squeezenet
+        std::vector<float> cls_scores;
+        {
+            const float mean_vals[3] = {104.f, 117.f, 123.f};
+            in.substract_mean_normalize(mean_vals, 0);
+
+            ncnn::Extractor ex = squeezenet.create_extractor();
+            ex.set_light_mode(true);
+            ex.set_num_threads(4);
+
+            ex.input(squeezenet_v1_1_param_id::BLOB_data, in);
+
+            ncnn::Mat out;
+            ex.extract(squeezenet_v1_1_param_id::BLOB_prob, out);
+
+            cls_scores.resize(out.w);
+            for (int j=0; j<out.w; j++)
+            {
+                cls_scores[j] = out[j];
+            }
+        }
+
+        // return top class
+        int top_class = 0;
+        float max_score = 0.f;
+        for (size_t i=0; i<cls_scores.size(); i++)
+        {
+            float s = cls_scores[i];
 //         __android_log_print(ANDROID_LOG_DEBUG, "SqueezeNcnn", "%d %f", i, s);
-        if (s > max_score)
-        {
-            top_class = i;
-            max_score = s;
+            if (s > max_score)
+            {
+                top_class = i;
+                max_score = s;
+            }
         }
+
+        const std::string& word = squeezenet_words[top_class];
+        char tmp[32];
+        sprintf(tmp, "%.3f", max_score);
+        std::string result_str = std::string(word.c_str() + 10) + " = " + tmp;
+
+        // +10 to skip leading n03179701
+        jstring result = env->NewStringUTF(result_str.c_str());
+
+        bench_end("detect");
+
+        return result;
     }
-
-    const std::string& word = squeezenet_words[top_class];
-    char tmp[32];
-    sprintf(tmp, "%.3f", max_score);
-    std::string result_str = std::string(word.c_str() + 10) + " = " + tmp;
-
-    // +10 to skip leading n03179701
-    jstring result = env->NewStringUTF(result_str.c_str());
-
-    bench_end("detect");
-
-    return result;
-}
 
 }

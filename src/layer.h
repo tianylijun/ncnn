@@ -23,7 +23,8 @@
 #include "paramdict.h"
 #include "platform.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class Layer
 {

@@ -14,7 +14,8 @@
 
 #include "deconvolution_arm.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 #include "deconvolution_4x4.h"
 #include "deconvolution_3x3.h"

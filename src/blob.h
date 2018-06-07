@@ -19,7 +19,8 @@
 #include <vector>
 #include "platform.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class Blob
 {

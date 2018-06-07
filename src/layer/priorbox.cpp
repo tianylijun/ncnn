@@ -16,7 +16,8 @@
 #include <algorithm>
 #include <math.h>
 
-namespace ncnn {
+namespace ncnn
+{
 
 DEFINE_LAYER_CREATOR(PriorBox)
 

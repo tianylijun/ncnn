@@ -17,7 +17,8 @@
 
 #include "softmax.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class Softmax_arm : public Softmax
 {

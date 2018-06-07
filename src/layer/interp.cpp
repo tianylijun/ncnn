@@ -15,7 +15,8 @@
 #include "interp.h"
 #include <algorithm>
 
-namespace ncnn {
+namespace ncnn
+{
 
 DEFINE_LAYER_CREATOR(Interp);
 

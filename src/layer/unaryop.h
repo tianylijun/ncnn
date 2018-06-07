@@ -17,7 +17,8 @@
 
 #include "layer.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class UnaryOp : public Layer
 {
@@ -28,7 +29,8 @@ public:
 
     virtual int forward_inplace(Mat& bottom_top_blob) const;
 
-    enum {
+    enum
+    {
         Operation_ABS   = 0,
         Operation_NEG   = 1,
         Operation_FLOOR = 2,

@@ -17,7 +17,8 @@
 
 #include "bias.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class Bias_arm : public Bias
 {

@@ -17,7 +17,8 @@
 
 #include "lrn.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class LRN_arm : public LRN
 {

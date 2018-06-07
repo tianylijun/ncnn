@@ -18,7 +18,8 @@
 #include <arm_neon.h>
 #endif // __ARM_NEON
 
-namespace ncnn {
+namespace ncnn
+{
 
 DEFINE_LAYER_CREATOR(PReLU_arm)
 
@@ -65,25 +66,25 @@ int PReLU_arm::forward_inplace(Mat& bottom_top_blob) const
 #else
         if (nn > 0)
         {
-        asm volatile(
-            "veor       q1, q0, q0          \n"
-            "vdup.f32   q2, %4              \n"
-            "0:                             \n"
-            "pld        [%1, #128]          \n"
-            "vld1.f32   {d0-d1}, [%1 :128]  \n"
-            "vcle.f32   q3, q0, q1          \n"
-            "vmul.f32   q4, q0, q2          \n"
-            "vbit.32    q0, q4, q3          \n"
-            "subs       %0, #1              \n"
-            "vst1.f32   {d0-d1}, [%1 :128]! \n"
-            "bne        0b                  \n"
-            : "=r"(nn),     // %0
-              "=r"(ptr)     // %1
-            : "0"(nn),
-              "1"(ptr),
-              "r"(slope)    // %4
-            : "cc", "memory", "q0", "q1", "q2", "q3", "q4"
-        );
+            asm volatile(
+                "veor       q1, q0, q0          \n"
+                "vdup.f32   q2, %4              \n"
+                "0:                             \n"
+                "pld        [%1, #128]          \n"
+                "vld1.f32   {d0-d1}, [%1 :128]  \n"
+                "vcle.f32   q3, q0, q1          \n"
+                "vmul.f32   q4, q0, q2          \n"
+                "vbit.32    q0, q4, q3          \n"
+                "subs       %0, #1              \n"
+                "vst1.f32   {d0-d1}, [%1 :128]! \n"
+                "bne        0b                  \n"
+                : "=r"(nn),     // %0
+                "=r"(ptr)     // %1
+                : "0"(nn),
+                "1"(ptr),
+                "r"(slope)    // %4
+                : "cc", "memory", "q0", "q1", "q2", "q3", "q4"
+            );
         }
 #endif // __aarch64__
 #endif // __ARM_NEON
