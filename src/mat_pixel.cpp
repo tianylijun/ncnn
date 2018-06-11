@@ -443,6 +443,7 @@ void from_nv122rgb(const unsigned char* yuv, unsigned w, unsigned h, unsigned st
     int32x4_t vsrc32x4_0   = vdupq_n_s32(0);
     int32x4_t vsrc32x4_255 = vdupq_n_s32(255);
 
+    //#pragma omp parallel for
     for( j = 0; j < roiH; j++)
     {
         const unsigned char *pCurY  = y + j*stride;
