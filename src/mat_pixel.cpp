@@ -406,6 +406,530 @@ static void to_rgba(const Mat& m, unsigned char* rgba)
 #undef SATURATE_CAST_UCHAR
 }
 
+/*
+|R|   | 298    0     409 | | Y - 16  |
+|G| = | 298  -100   -208 | | U - 128 |
+|B|   | 298   516     0  | | V - 128 |
+
+R = (298*(Y-16)+409*(V-128)+128)>>8
+G = (298*(Y-16)-100*(U-128)-208*(V-128)+128)>>8
+B = (298*(Y-16)+516*(U-128)+128)>>8
+
+Y = (( 66 * R + 129 * G +  25 * B + 128) >> 8) +  16
+U = ((-38 * R -  74 * G + 112 * B + 128) >> 8) + 128
+V = ((112 * R -  94 * G -  18 * B + 128) >> 8) + 128
+*/
+void from_nv122rgb(const unsigned char* yuv, unsigned w, unsigned h, unsigned stride, unsigned roiX, unsigned roiY, unsigned roiW, unsigned roiH, unsigned char* pDst, unsigned bgrFlag)
+{
+    unsigned i = 0, j = 0;
+    unsigned roiWDiv16, roiWHas8, roiWLeft;
+    unsigned offsetH = 0, offsetW = 0;
+    //printf("[%d %d %d   %d %d %d %d   %d]\n", w, h, stride, roiX, roiY, roiW, roiH, bgrFlag);
+    const unsigned char * y  = yuv + roiX + roiY*stride;
+    const unsigned char * uv = yuv + stride * h + (roiY>>1)*stride + ((roiX>>1)<<1);
+
+    if (0 != (roiY&1)) offsetH = 1;
+    if (0 != (roiX&1)) offsetW = 1;
+
+    roiWDiv16 = (roiW - offsetW)>>4;
+    roiWHas8  = (roiW - offsetW)&8;
+    roiWLeft  = (roiW - offsetW)&7;
+
+    //printf("[%d %d %d %d %d]\n", offsetW, offsetH, roiWDiv16, roiWHas8, roiWLeft);
+
+    int16x8_t vsrc16x8_16  = vdupq_n_s16(16);
+    int16x8_t vsrc16x8_128 = vdupq_n_s16(128);
+    int32x4_t vsrc32x4_128 = vdupq_n_s32(128);
+    int32x4_t vsrc32x4_0   = vdupq_n_s32(0);
+    int32x4_t vsrc32x4_255 = vdupq_n_s32(255);
+
+    for( j = 0; j < roiH; j++)
+    {
+        const unsigned char *pCurY  = y + j*stride;
+        const unsigned char *pCurUV = uv + ((j+offsetH)/2)*stride;
+        unsigned char *pDstCur      = pDst + j*roiW*3;
+
+        if (offsetW) //odd point process separate
+        {
+            int Y, U, V, R, G, B, Y298;
+            Y = ((int32_t)*pCurY) - 16;
+            U = ((int32_t)*pCurUV) - 128;
+            V = ((int32_t)*(pCurUV+1)) - 128;
+
+            Y298 = 298*Y;
+            R = (Y298 + 409*(V) + 128)>>8;
+            G = (Y298 - 100*(U) - 208*(V)+128)>>8;
+            B = (Y298 + 516*(U) + 128)>>8;
+
+            if (R < 0) R = 0;
+            if (R > 255) R = 255;
+            if (G < 0) G = 0;
+            if (G > 255) G = 255;
+            if (B < 0) B = 0;
+            if (B > 255) B = 255;
+
+            if (bgrFlag)
+            {
+                *pDstCur++ = (unsigned char)B;
+                *pDstCur++ = (unsigned char)G;
+                *pDstCur++ = (unsigned char)R;
+            }
+            else
+            {
+                *pDstCur++ = (unsigned char)R;
+                *pDstCur++ = (unsigned char)G;
+                *pDstCur++ = (unsigned char)B;
+            }
+
+            pCurY++;
+            pCurUV += 2;
+        }
+
+        for( i = 0; i < roiWDiv16; i++)
+        {
+            int32x4x3_t vsrc32x4x3_0; // LOW  RGB
+            int32x4x3_t vsrc32x4x3_1; // HIGH RGB
+
+            vsrc32x4x3_0.val[0] = vsrc32x4_128; //R
+            //vsrc32x4x3_0.val[1] = vsrc32x4_128; //G
+            //vsrc32x4x3_0.val[2] = vsrc32x4_128; //B
+
+            vsrc32x4x3_1.val[0] = vsrc32x4_128; //R
+            //vsrc32x4x3_1.val[1] = vsrc32x4_128; //G
+            //vsrc32x4x3_1.val[2] = vsrc32x4_128; //B
+
+            uint8x8_t  vsrc8x8_y    = vld1_u8(pCurY); // [y0y1y2y3y4y5y6u7]
+            uint16x8_t vsrc16x8_y_u = vmovl_u8(vsrc8x8_y);
+            int16x8_t  vsrc16x8_y   = vreinterpretq_s16_u16(vsrc16x8_y_u);
+            vsrc16x8_y = vsubq_s16(vsrc16x8_y, vsrc16x8_16);
+
+            uint8x8x2_t vsrc8x8x2_uv = vld2_u8(pCurUV); // [u0u1u2u3u4u5u6u7] [v0v1v2v3v4v5v6v7]
+            uint8x8x2_t vsrc8x8x2_u  = vzip_u8(vsrc8x8x2_uv.val[0], vsrc8x8x2_uv.val[0]); //[u0u0u1u1u2u2u3u3] [u4u4u5u5u6u6u7u7]
+            uint8x8x2_t vsrc8x8x2_v  = vzip_u8(vsrc8x8x2_uv.val[1], vsrc8x8x2_uv.val[1]); //[v0v0v1v1v2v2v3v3] [v4v4v5v5v6v6v7v7]
+            uint16x8_t  vsrc16x8_u_u = vmovl_u8(vsrc8x8x2_u.val[0]); //[u0u0u1u1u2u2u3u3]
+            uint16x8_t  vsrc16x8_v_u = vmovl_u8(vsrc8x8x2_v.val[0]); //[v0v0v1v1v2v2v3v3]
+            int16x8_t   vsrc16x8_u   = vreinterpretq_s16_u16(vsrc16x8_u_u);
+            int16x8_t   vsrc16x8_v   = vreinterpretq_s16_u16(vsrc16x8_v_u);
+            vsrc16x8_u = vsubq_s16(vsrc16x8_u, vsrc16x8_128);
+            vsrc16x8_v = vsubq_s16(vsrc16x8_v, vsrc16x8_128);
+
+            //R   R = (298*(Y-16)+409*(V-128)+128)>>8
+            vsrc32x4x3_0.val[0] = vmlal_n_s16(vsrc32x4x3_0.val[0], vget_low_s16(vsrc16x8_y),  298);
+            vsrc32x4x3_1.val[0] = vmlal_n_s16(vsrc32x4x3_1.val[0], vget_high_s16(vsrc16x8_y), 298);
+
+            vsrc32x4x3_0.val[1] = vsrc32x4x3_0.val[0]; //vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_y),  298);
+            vsrc32x4x3_1.val[1] = vsrc32x4x3_1.val[0]; //vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_y), 298);
+
+            vsrc32x4x3_0.val[2] = vsrc32x4x3_0.val[0]; //vmlal_n_s16(vsrc32x4x3_0.val[2], vget_low_s16(vsrc16x8_y),  298);
+            vsrc32x4x3_1.val[2] = vsrc32x4x3_1.val[0]; //vmlal_n_s16(vsrc32x4x3_1.val[2], vget_high_s16(vsrc16x8_y), 298);
+
+            vsrc32x4x3_0.val[0] = vmlal_n_s16(vsrc32x4x3_0.val[0], vget_low_s16(vsrc16x8_v),  409);
+            vsrc32x4x3_1.val[0] = vmlal_n_s16(vsrc32x4x3_1.val[0], vget_high_s16(vsrc16x8_v), 409);
+            //G G = (298*(Y-16)-100*(U-128)-208*(V-128)+128)>>8
+            //vsrc32x4x3_0.val[1] = vsrc32x4x3_0.val[0]; //vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_y),  298);
+            //vsrc32x4x3_1.val[1] = vsrc32x4x3_1.val[0]; //vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_y), 298);
+
+            vsrc32x4x3_0.val[1] = vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_u),  -100);
+            vsrc32x4x3_1.val[1] = vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_u), -100);
+
+            vsrc32x4x3_0.val[1] = vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_v),  -208);
+            vsrc32x4x3_1.val[1] = vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_v), -208);
+            //B B = (298*(Y-16)+516*(U-128)+128)>>8
+            //vsrc32x4x3_0.val[2] = vsrc32x4x3_0.val[0]; //vmlal_n_s16(vsrc32x4x3_0.val[2], vget_low_s16(vsrc16x8_y),  298);
+            //vsrc32x4x3_1.val[2] = vsrc32x4x3_1.val[0]; //vmlal_n_s16(vsrc32x4x3_1.val[2], vget_high_s16(vsrc16x8_y), 298);
+
+            vsrc32x4x3_0.val[2] = vmlal_n_s16(vsrc32x4x3_0.val[2], vget_low_s16(vsrc16x8_u),  516);
+            vsrc32x4x3_1.val[2] = vmlal_n_s16(vsrc32x4x3_1.val[2], vget_high_s16(vsrc16x8_u), 516);
+
+            //shift right
+            vsrc32x4x3_0.val[0] = vshrq_n_s32(vsrc32x4x3_0.val[0], 8);
+            vsrc32x4x3_1.val[0] = vshrq_n_s32(vsrc32x4x3_1.val[0], 8);
+
+            vsrc32x4x3_0.val[1] = vshrq_n_s32(vsrc32x4x3_0.val[1], 8);
+            vsrc32x4x3_1.val[1] = vshrq_n_s32(vsrc32x4x3_1.val[1], 8);
+
+            vsrc32x4x3_0.val[2] = vshrq_n_s32(vsrc32x4x3_0.val[2], 8);
+            vsrc32x4x3_1.val[2] = vshrq_n_s32(vsrc32x4x3_1.val[2], 8);
+
+            uint32x4_t mask;
+
+            mask = vcltq_s32(vsrc32x4x3_0.val[0], vsrc32x4_255);
+            vsrc32x4x3_0.val[0]  = vbslq_s32(mask, vsrc32x4x3_0.val[0], vsrc32x4_255);
+            mask = vcltq_s32(vsrc32x4x3_1.val[0], vsrc32x4_255);
+            vsrc32x4x3_1.val[0]  = vbslq_s32(mask, vsrc32x4x3_1.val[0], vsrc32x4_255);
+
+            mask = vcltq_s32(vsrc32x4x3_0.val[1], vsrc32x4_255);
+            vsrc32x4x3_0.val[1]  = vbslq_s32(mask, vsrc32x4x3_0.val[1], vsrc32x4_255);
+            mask = vcltq_s32(vsrc32x4x3_1.val[1], vsrc32x4_255);
+            vsrc32x4x3_1.val[1]  = vbslq_s32(mask, vsrc32x4x3_1.val[1], vsrc32x4_255);
+
+            mask = vcltq_s32(vsrc32x4x3_0.val[2], vsrc32x4_255);
+            vsrc32x4x3_0.val[2]  = vbslq_s32(mask, vsrc32x4x3_0.val[2], vsrc32x4_255);
+            mask = vcltq_s32(vsrc32x4x3_1.val[2], vsrc32x4_255);
+            vsrc32x4x3_1.val[2]  = vbslq_s32(mask, vsrc32x4x3_1.val[2], vsrc32x4_255);
+
+            mask = vcgtq_s32(vsrc32x4x3_0.val[0], vsrc32x4_0);
+            vsrc32x4x3_0.val[0]  = vbslq_s32(mask, vsrc32x4x3_0.val[0], vsrc32x4_0);
+            mask = vcgtq_s32(vsrc32x4x3_1.val[0], vsrc32x4_0);
+            vsrc32x4x3_1.val[0]  = vbslq_s32(mask, vsrc32x4x3_1.val[0], vsrc32x4_0);
+
+            mask = vcgtq_s32(vsrc32x4x3_0.val[1], vsrc32x4_0);
+            vsrc32x4x3_0.val[1]  = vbslq_s32(mask, vsrc32x4x3_0.val[1], vsrc32x4_0);
+            mask = vcgtq_s32(vsrc32x4x3_1.val[1], vsrc32x4_0);
+            vsrc32x4x3_1.val[1]  = vbslq_s32(mask, vsrc32x4x3_1.val[1], vsrc32x4_0);
+
+            mask = vcgtq_s32(vsrc32x4x3_0.val[2], vsrc32x4_0);
+            vsrc32x4x3_0.val[2]  = vbslq_s32(mask, vsrc32x4x3_0.val[2], vsrc32x4_0);
+            mask = vcgtq_s32(vsrc32x4x3_1.val[2], vsrc32x4_0);
+            vsrc32x4x3_1.val[2]  = vbslq_s32(mask, vsrc32x4x3_1.val[2], vsrc32x4_0);
+
+            //narrow 32 to 8
+            uint8x8x3_t vRet8x8x3;
+            uint32x4x3_t vsrc32x4x3_u_0, vsrc32x4x3_u_1;
+            vsrc32x4x3_u_0.val[0] = vreinterpretq_u32_s32(vsrc32x4x3_0.val[0]);
+            vsrc32x4x3_u_0.val[1] = vreinterpretq_u32_s32(vsrc32x4x3_0.val[1]);
+            vsrc32x4x3_u_0.val[2] = vreinterpretq_u32_s32(vsrc32x4x3_0.val[2]);
+            vsrc32x4x3_u_1.val[0] = vreinterpretq_u32_s32(vsrc32x4x3_1.val[0]);
+            vsrc32x4x3_u_1.val[1] = vreinterpretq_u32_s32(vsrc32x4x3_1.val[1]);
+            vsrc32x4x3_u_1.val[2] = vreinterpretq_u32_s32(vsrc32x4x3_1.val[2]);
+
+            //R
+            uint16x4_t vR16x4_0 = vmovn_u32(vsrc32x4x3_u_0.val[0]);
+            uint16x4_t vR16x4_1 = vmovn_u32(vsrc32x4x3_u_1.val[0]);
+            uint16x8_t vR16x8   = vcombine_u16(vR16x4_0, vR16x4_1);
+            if (bgrFlag)
+                vRet8x8x3.val[2] = vmovn_u16(vR16x8);
+            else
+                vRet8x8x3.val[0] = vmovn_u16(vR16x8);
+
+            //G
+            uint16x4_t vG16x4_0 = vmovn_u32(vsrc32x4x3_u_0.val[1]);
+            uint16x4_t vG16x4_1 = vmovn_u32(vsrc32x4x3_u_1.val[1]);
+            uint16x8_t vG16x8   = vcombine_u16(vG16x4_0, vG16x4_1);
+            vRet8x8x3.val[1]    = vmovn_u16(vG16x8);
+
+            //B
+            uint16x4_t vB16x4_0 = vmovn_u32(vsrc32x4x3_u_0.val[2]);
+            uint16x4_t vB16x4_1 = vmovn_u32(vsrc32x4x3_u_1.val[2]);
+            uint16x8_t vB16x8   = vcombine_u16(vB16x4_0, vB16x4_1);
+            if (bgrFlag)
+                vRet8x8x3.val[0] = vmovn_u16(vB16x8);
+            else
+                vRet8x8x3.val[2] = vmovn_u16(vB16x8);
+
+            vst3_u8(pDstCur, vRet8x8x3);
+            pDstCur += 24;
+            pCurY += 8;
+
+            //next 8 elements
+            vsrc32x4x3_0.val[0] = vsrc32x4_128; //R
+            //vsrc32x4x3_0.val[1] = vsrc32x4_128; //G
+            //vsrc32x4x3_0.val[2] = vsrc32x4_128; //B
+
+            vsrc32x4x3_1.val[0] = vsrc32x4_128; //R
+            //vsrc32x4x3_1.val[1] = vsrc32x4_128; //G
+            //vsrc32x4x3_1.val[2] = vsrc32x4_128; //B
+
+            vsrc8x8_y    = vld1_u8(pCurY); // [y8y9y10y11y12y13y14u15]
+            vsrc16x8_y_u = vmovl_u8(vsrc8x8_y);
+            vsrc16x8_y   = vreinterpretq_s16_u16(vsrc16x8_y_u);
+            vsrc16x8_y   = vsubq_s16(vsrc16x8_y, vsrc16x8_16);
+
+            vsrc16x8_u_u = vmovl_u8(vsrc8x8x2_u.val[1]); //[u4u4u5u5u6u6u7u7]
+            vsrc16x8_v_u = vmovl_u8(vsrc8x8x2_v.val[1]); //[v4v4v5v5v6v6v7v7]
+            vsrc16x8_u   = vreinterpretq_s16_u16(vsrc16x8_u_u);
+            vsrc16x8_v   = vreinterpretq_s16_u16(vsrc16x8_v_u);
+            vsrc16x8_u   = vsubq_s16(vsrc16x8_u, vsrc16x8_128);
+            vsrc16x8_v   = vsubq_s16(vsrc16x8_v, vsrc16x8_128);
+
+            //R
+            vsrc32x4x3_0.val[0] = vmlal_n_s16(vsrc32x4x3_0.val[0], vget_low_s16(vsrc16x8_y),  298);
+            vsrc32x4x3_1.val[0] = vmlal_n_s16(vsrc32x4x3_1.val[0], vget_high_s16(vsrc16x8_y), 298);
+
+            vsrc32x4x3_0.val[1] = vsrc32x4x3_0.val[0]; //vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_y),  298);
+            vsrc32x4x3_1.val[1] = vsrc32x4x3_1.val[0]; //vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_y), 298);
+
+            vsrc32x4x3_0.val[2] = vsrc32x4x3_0.val[0]; //vmlal_n_s16(vsrc32x4x3_0.val[2], vget_low_s16(vsrc16x8_y),  298);
+            vsrc32x4x3_1.val[2] = vsrc32x4x3_1.val[0]; //vmlal_n_s16(vsrc32x4x3_1.val[2], vget_high_s16(vsrc16x8_y), 298);
+
+
+            vsrc32x4x3_0.val[0] = vmlal_n_s16(vsrc32x4x3_0.val[0], vget_low_s16(vsrc16x8_v),  409);
+            vsrc32x4x3_1.val[0] = vmlal_n_s16(vsrc32x4x3_1.val[0], vget_high_s16(vsrc16x8_v), 409);
+            //G
+            //vsrc32x4x3_0.val[1] = vsrc32x4x3_0.val[0]; //vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_y),  298);
+            //vsrc32x4x3_1.val[1] = vsrc32x4x3_1.val[0]; //vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_y), 298);
+
+            vsrc32x4x3_0.val[1] = vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_u),  -100);
+            vsrc32x4x3_1.val[1] = vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_u), -100);
+
+            vsrc32x4x3_0.val[1] = vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_v),  -208);
+            vsrc32x4x3_1.val[1] = vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_v), -208);
+            //B
+            //vsrc32x4x3_0.val[2] = vsrc32x4x3_0.val[0]; //vmlal_n_s16(vsrc32x4x3_0.val[2], vget_low_s16(vsrc16x8_y),  298);
+            //vsrc32x4x3_1.val[2] = vsrc32x4x3_1.val[0]; //vmlal_n_s16(vsrc32x4x3_1.val[2], vget_high_s16(vsrc16x8_y), 298);
+
+            vsrc32x4x3_0.val[2] = vmlal_n_s16(vsrc32x4x3_0.val[2], vget_low_s16(vsrc16x8_u),  516);
+            vsrc32x4x3_1.val[2] = vmlal_n_s16(vsrc32x4x3_1.val[2], vget_high_s16(vsrc16x8_u), 516);
+
+            //shift right
+            vsrc32x4x3_0.val[0] = vshrq_n_s32(vsrc32x4x3_0.val[0], 8);
+            vsrc32x4x3_1.val[0] = vshrq_n_s32(vsrc32x4x3_1.val[0], 8);
+
+            vsrc32x4x3_0.val[1] = vshrq_n_s32(vsrc32x4x3_0.val[1], 8);
+            vsrc32x4x3_1.val[1] = vshrq_n_s32(vsrc32x4x3_1.val[1], 8);
+
+            vsrc32x4x3_0.val[2] = vshrq_n_s32(vsrc32x4x3_0.val[2], 8);
+            vsrc32x4x3_1.val[2] = vshrq_n_s32(vsrc32x4x3_1.val[2], 8);
+
+            mask = vcltq_s32(vsrc32x4x3_0.val[0], vsrc32x4_255);
+            vsrc32x4x3_0.val[0]  = vbslq_s32(mask, vsrc32x4x3_0.val[0], vsrc32x4_255);
+            mask = vcltq_s32(vsrc32x4x3_1.val[0], vsrc32x4_255);
+            vsrc32x4x3_1.val[0]  = vbslq_s32(mask, vsrc32x4x3_1.val[0], vsrc32x4_255);
+
+            mask = vcltq_s32(vsrc32x4x3_0.val[1], vsrc32x4_255);
+            vsrc32x4x3_0.val[1]  = vbslq_s32(mask, vsrc32x4x3_0.val[1], vsrc32x4_255);
+            mask = vcltq_s32(vsrc32x4x3_1.val[1], vsrc32x4_255);
+            vsrc32x4x3_1.val[1]  = vbslq_s32(mask, vsrc32x4x3_1.val[1], vsrc32x4_255);
+
+            mask = vcltq_s32(vsrc32x4x3_0.val[2], vsrc32x4_255);
+            vsrc32x4x3_0.val[2]  = vbslq_s32(mask, vsrc32x4x3_0.val[2], vsrc32x4_255);
+            mask = vcltq_s32(vsrc32x4x3_1.val[2], vsrc32x4_255);
+            vsrc32x4x3_1.val[2]  = vbslq_s32(mask, vsrc32x4x3_1.val[2], vsrc32x4_255);
+
+            mask = vcgtq_s32(vsrc32x4x3_0.val[0], vsrc32x4_0);
+            vsrc32x4x3_0.val[0]  = vbslq_s32(mask, vsrc32x4x3_0.val[0], vsrc32x4_0);
+            mask = vcgtq_s32(vsrc32x4x3_1.val[0], vsrc32x4_0);
+            vsrc32x4x3_1.val[0]  = vbslq_s32(mask, vsrc32x4x3_1.val[0], vsrc32x4_0);
+
+            mask = vcgtq_s32(vsrc32x4x3_0.val[1], vsrc32x4_0);
+            vsrc32x4x3_0.val[1]  = vbslq_s32(mask, vsrc32x4x3_0.val[1], vsrc32x4_0);
+            mask = vcgtq_s32(vsrc32x4x3_1.val[1], vsrc32x4_0);
+            vsrc32x4x3_1.val[1]  = vbslq_s32(mask, vsrc32x4x3_1.val[1], vsrc32x4_0);
+
+            mask = vcgtq_s32(vsrc32x4x3_0.val[2], vsrc32x4_0);
+            vsrc32x4x3_0.val[2]  = vbslq_s32(mask, vsrc32x4x3_0.val[2], vsrc32x4_0);
+            mask = vcgtq_s32(vsrc32x4x3_1.val[2], vsrc32x4_0);
+            vsrc32x4x3_1.val[2]  = vbslq_s32(mask, vsrc32x4x3_1.val[2], vsrc32x4_0);
+
+            //narrow 32 to 8
+            vsrc32x4x3_u_0.val[0] = vreinterpretq_u32_s32(vsrc32x4x3_0.val[0]);
+            vsrc32x4x3_u_0.val[1] = vreinterpretq_u32_s32(vsrc32x4x3_0.val[1]);
+            vsrc32x4x3_u_0.val[2] = vreinterpretq_u32_s32(vsrc32x4x3_0.val[2]);
+            vsrc32x4x3_u_1.val[0] = vreinterpretq_u32_s32(vsrc32x4x3_1.val[0]);
+            vsrc32x4x3_u_1.val[1] = vreinterpretq_u32_s32(vsrc32x4x3_1.val[1]);
+            vsrc32x4x3_u_1.val[2] = vreinterpretq_u32_s32(vsrc32x4x3_1.val[2]);
+
+            //R
+            vR16x4_0 = vmovn_u32(vsrc32x4x3_u_0.val[0]);
+            vR16x4_1 = vmovn_u32(vsrc32x4x3_u_1.val[0]);
+            vR16x8   = vcombine_u16(vR16x4_0, vR16x4_1);
+            if (bgrFlag)
+                vRet8x8x3.val[2] = vmovn_u16(vR16x8);
+            else
+                vRet8x8x3.val[0] = vmovn_u16(vR16x8);
+
+            //G
+            vG16x4_0 = vmovn_u32(vsrc32x4x3_u_0.val[1]);
+            vG16x4_1 = vmovn_u32(vsrc32x4x3_u_1.val[1]);
+            vG16x8   = vcombine_u16(vG16x4_0, vG16x4_1);
+            vRet8x8x3.val[1]    = vmovn_u16(vG16x8);
+
+            //B
+            vB16x4_0 = vmovn_u32(vsrc32x4x3_u_0.val[2]);
+            vB16x4_1 = vmovn_u32(vsrc32x4x3_u_1.val[2]);
+            vB16x8   = vcombine_u16(vB16x4_0, vB16x4_1);
+            if (bgrFlag)
+                vRet8x8x3.val[0] = vmovn_u16(vB16x8);
+            else
+                vRet8x8x3.val[2] = vmovn_u16(vB16x8);
+
+            vst3_u8(pDstCur, vRet8x8x3);
+            pDstCur += 24;
+            pCurY += 8;
+            pCurUV += 16;
+        }
+
+        if (roiWHas8)
+        {
+            int32x4x3_t vsrc32x4x3_0; // LOW  RGB
+            int32x4x3_t vsrc32x4x3_1; // HIGH RGB
+
+            vsrc32x4x3_0.val[0] = vsrc32x4_128; //R
+            //vsrc32x4x3_0.val[1] = vsrc32x4_128; //G
+            //vsrc32x4x3_0.val[2] = vsrc32x4_128; //B
+
+            vsrc32x4x3_1.val[0] = vsrc32x4_128; //R
+            //vsrc32x4x3_1.val[1] = vsrc32x4_128; //G
+            //vsrc32x4x3_1.val[2] = vsrc32x4_128; //B
+
+            uint8x8_t  vsrc8x8_y    = vld1_u8(pCurY); // [y0y1y2y3y4y5y6u7]
+            uint16x8_t vsrc16x8_y_u = vmovl_u8(vsrc8x8_y);
+            int16x8_t  vsrc16x8_y   = vreinterpretq_s16_u16(vsrc16x8_y_u);
+            vsrc16x8_y = vsubq_s16(vsrc16x8_y, vsrc16x8_16);
+
+            uint8x8x2_t vsrc8x8x2_uv = vld2_u8(pCurUV); // [u0u1u2u3u4u5u6u7] [v0v1v2v3v4v5v6v7]
+            uint8x8x2_t vsrc8x8x2_u  = vzip_u8(vsrc8x8x2_uv.val[0], vsrc8x8x2_uv.val[0]); //[u0u0u1u1u2u2u3u3] [u4u4u5u5u6u6u7u7]
+            uint8x8x2_t vsrc8x8x2_v  = vzip_u8(vsrc8x8x2_uv.val[1], vsrc8x8x2_uv.val[1]); //[v0v0v1v1v2v2v3v3] [v4v4v5v5v6v6v7v7]
+            uint16x8_t  vsrc16x8_u_u = vmovl_u8(vsrc8x8x2_u.val[0]); //[u0u0u1u1u2u2u3u3]
+            uint16x8_t  vsrc16x8_v_u = vmovl_u8(vsrc8x8x2_v.val[0]); //[v0v0v1v1v2v2v3v3]
+            int16x8_t   vsrc16x8_u   = vreinterpretq_s16_u16(vsrc16x8_u_u);
+            int16x8_t   vsrc16x8_v   = vreinterpretq_s16_u16(vsrc16x8_v_u);
+            vsrc16x8_u = vsubq_s16(vsrc16x8_u, vsrc16x8_128);
+            vsrc16x8_v = vsubq_s16(vsrc16x8_v, vsrc16x8_128);
+
+            //R   R = (298*(Y-16)+409*(V-128)+128)>>8
+            vsrc32x4x3_0.val[0] = vmlal_n_s16(vsrc32x4x3_0.val[0], vget_low_s16(vsrc16x8_y),  298);
+            vsrc32x4x3_1.val[0] = vmlal_n_s16(vsrc32x4x3_1.val[0], vget_high_s16(vsrc16x8_y), 298);
+
+            vsrc32x4x3_0.val[1] = vsrc32x4x3_0.val[0]; //vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_y),  298);
+            vsrc32x4x3_1.val[1] = vsrc32x4x3_1.val[0]; //vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_y), 298);
+
+            vsrc32x4x3_0.val[2] = vsrc32x4x3_0.val[0]; //vmlal_n_s16(vsrc32x4x3_0.val[2], vget_low_s16(vsrc16x8_y),  298);
+            vsrc32x4x3_1.val[2] = vsrc32x4x3_1.val[0]; //vmlal_n_s16(vsrc32x4x3_1.val[2], vget_high_s16(vsrc16x8_y), 298);
+
+            vsrc32x4x3_0.val[0] = vmlal_n_s16(vsrc32x4x3_0.val[0], vget_low_s16(vsrc16x8_v),  409);
+            vsrc32x4x3_1.val[0] = vmlal_n_s16(vsrc32x4x3_1.val[0], vget_high_s16(vsrc16x8_v), 409);
+            //G G = (298*(Y-16)-100*(U-128)-208*(V-128)+128)>>8
+            //vsrc32x4x3_0.val[1] = vsrc32x4x3_0.val[0]; //vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_y),  298);
+            //vsrc32x4x3_1.val[1] = vsrc32x4x3_1.val[0]; //vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_y), 298);
+
+            vsrc32x4x3_0.val[1] = vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_u),  -100);
+            vsrc32x4x3_1.val[1] = vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_u), -100);
+
+            vsrc32x4x3_0.val[1] = vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_v),  -208);
+            vsrc32x4x3_1.val[1] = vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_v), -208);
+            //B B = (298*(Y-16)+516*(U-128)+128)>>8
+            //vsrc32x4x3_0.val[2] = vsrc32x4x3_0.val[0]; //vmlal_n_s16(vsrc32x4x3_0.val[2], vget_low_s16(vsrc16x8_y),  298);
+            //vsrc32x4x3_1.val[2] = vsrc32x4x3_1.val[0]; //vmlal_n_s16(vsrc32x4x3_1.val[2], vget_high_s16(vsrc16x8_y), 298);
+
+            vsrc32x4x3_0.val[2] = vmlal_n_s16(vsrc32x4x3_0.val[2], vget_low_s16(vsrc16x8_u),  516);
+            vsrc32x4x3_1.val[2] = vmlal_n_s16(vsrc32x4x3_1.val[2], vget_high_s16(vsrc16x8_u), 516);
+
+            //shift right
+            vsrc32x4x3_0.val[0] = vshrq_n_s32(vsrc32x4x3_0.val[0], 8);
+            vsrc32x4x3_1.val[0] = vshrq_n_s32(vsrc32x4x3_1.val[0], 8);
+
+            vsrc32x4x3_0.val[1] = vshrq_n_s32(vsrc32x4x3_0.val[1], 8);
+            vsrc32x4x3_1.val[1] = vshrq_n_s32(vsrc32x4x3_1.val[1], 8);
+
+            vsrc32x4x3_0.val[2] = vshrq_n_s32(vsrc32x4x3_0.val[2], 8);
+            vsrc32x4x3_1.val[2] = vshrq_n_s32(vsrc32x4x3_1.val[2], 8);
+
+            uint32x4_t mask;
+
+            mask = vcltq_s32(vsrc32x4x3_0.val[0], vsrc32x4_255);
+            vsrc32x4x3_0.val[0]  = vbslq_s32(mask, vsrc32x4x3_0.val[0], vsrc32x4_255);
+            mask = vcltq_s32(vsrc32x4x3_1.val[0], vsrc32x4_255);
+            vsrc32x4x3_1.val[0]  = vbslq_s32(mask, vsrc32x4x3_1.val[0], vsrc32x4_255);
+
+            mask = vcltq_s32(vsrc32x4x3_0.val[1], vsrc32x4_255);
+            vsrc32x4x3_0.val[1]  = vbslq_s32(mask, vsrc32x4x3_0.val[1], vsrc32x4_255);
+            mask = vcltq_s32(vsrc32x4x3_1.val[1], vsrc32x4_255);
+            vsrc32x4x3_1.val[1]  = vbslq_s32(mask, vsrc32x4x3_1.val[1], vsrc32x4_255);
+
+            mask = vcltq_s32(vsrc32x4x3_0.val[2], vsrc32x4_255);
+            vsrc32x4x3_0.val[2]  = vbslq_s32(mask, vsrc32x4x3_0.val[2], vsrc32x4_255);
+            mask = vcltq_s32(vsrc32x4x3_1.val[2], vsrc32x4_255);
+            vsrc32x4x3_1.val[2]  = vbslq_s32(mask, vsrc32x4x3_1.val[2], vsrc32x4_255);
+
+            mask = vcgtq_s32(vsrc32x4x3_0.val[0], vsrc32x4_0);
+            vsrc32x4x3_0.val[0]  = vbslq_s32(mask, vsrc32x4x3_0.val[0], vsrc32x4_0);
+            mask = vcgtq_s32(vsrc32x4x3_1.val[0], vsrc32x4_0);
+            vsrc32x4x3_1.val[0]  = vbslq_s32(mask, vsrc32x4x3_1.val[0], vsrc32x4_0);
+
+            mask = vcgtq_s32(vsrc32x4x3_0.val[1], vsrc32x4_0);
+            vsrc32x4x3_0.val[1]  = vbslq_s32(mask, vsrc32x4x3_0.val[1], vsrc32x4_0);
+            mask = vcgtq_s32(vsrc32x4x3_1.val[1], vsrc32x4_0);
+            vsrc32x4x3_1.val[1]  = vbslq_s32(mask, vsrc32x4x3_1.val[1], vsrc32x4_0);
+
+            mask = vcgtq_s32(vsrc32x4x3_0.val[2], vsrc32x4_0);
+            vsrc32x4x3_0.val[2]  = vbslq_s32(mask, vsrc32x4x3_0.val[2], vsrc32x4_0);
+            mask = vcgtq_s32(vsrc32x4x3_1.val[2], vsrc32x4_0);
+            vsrc32x4x3_1.val[2]  = vbslq_s32(mask, vsrc32x4x3_1.val[2], vsrc32x4_0);
+
+            //narrow 32 to 8
+            uint8x8x3_t vRet8x8x3;
+            uint32x4x3_t vsrc32x4x3_u_0, vsrc32x4x3_u_1;
+            vsrc32x4x3_u_0.val[0] = vreinterpretq_u32_s32(vsrc32x4x3_0.val[0]);
+            vsrc32x4x3_u_0.val[1] = vreinterpretq_u32_s32(vsrc32x4x3_0.val[1]);
+            vsrc32x4x3_u_0.val[2] = vreinterpretq_u32_s32(vsrc32x4x3_0.val[2]);
+            vsrc32x4x3_u_1.val[0] = vreinterpretq_u32_s32(vsrc32x4x3_1.val[0]);
+            vsrc32x4x3_u_1.val[1] = vreinterpretq_u32_s32(vsrc32x4x3_1.val[1]);
+            vsrc32x4x3_u_1.val[2] = vreinterpretq_u32_s32(vsrc32x4x3_1.val[2]);
+
+            //R
+            uint16x4_t vR16x4_0 = vmovn_u32(vsrc32x4x3_u_0.val[0]);
+            uint16x4_t vR16x4_1 = vmovn_u32(vsrc32x4x3_u_1.val[0]);
+            uint16x8_t vR16x8   = vcombine_u16(vR16x4_0, vR16x4_1);
+            if (bgrFlag)
+                vRet8x8x3.val[2] = vmovn_u16(vR16x8);
+            else
+                vRet8x8x3.val[0] = vmovn_u16(vR16x8);
+
+            //G
+            uint16x4_t vG16x4_0 = vmovn_u32(vsrc32x4x3_u_0.val[1]);
+            uint16x4_t vG16x4_1 = vmovn_u32(vsrc32x4x3_u_1.val[1]);
+            uint16x8_t vG16x8   = vcombine_u16(vG16x4_0, vG16x4_1);
+            vRet8x8x3.val[1]    = vmovn_u16(vG16x8);
+
+            //B
+            uint16x4_t vB16x4_0 = vmovn_u32(vsrc32x4x3_u_0.val[2]);
+            uint16x4_t vB16x4_1 = vmovn_u32(vsrc32x4x3_u_1.val[2]);
+            uint16x8_t vB16x8   = vcombine_u16(vB16x4_0, vB16x4_1);
+            if (bgrFlag)
+                vRet8x8x3.val[0] = vmovn_u16(vB16x8);
+            else
+                vRet8x8x3.val[2] = vmovn_u16(vB16x8);
+
+            vst3_u8(pDstCur, vRet8x8x3);
+
+            pDstCur += 24;
+            pCurY += 8;
+            pCurUV += 8;
+        }
+
+        for( w = 0; w < roiWLeft; w++)
+        {
+            int Y, U, V, R, G, B, Y298;
+            Y = ((int32_t)*pCurY) - 16;
+            U = ((int32_t)*pCurUV) - 128;
+            V = ((int32_t)*(pCurUV+1)) - 128;
+
+            Y298 = 298*(Y);
+            R = (Y298 + 409*(V) + 128)>>8;
+            G = (Y298 - 100*(U) - 208*(V) + 128)>>8;
+            B = (Y298 + 516*(U) + 128)>>8;
+
+            if (R < 0) R = 0;
+            else if (R > 255) R = 255;
+
+            if (G < 0) G = 0;
+            else if (G > 255) G = 255;
+
+            if (B < 0) B = 0;
+            else if (B > 255) B = 255;
+
+            if (bgrFlag)
+            {
+                *pDstCur++ = (unsigned char)B;
+                *pDstCur++ = (unsigned char)G;
+                *pDstCur++ = (unsigned char)R;
+            }
+            else
+            {
+                *pDstCur++ = (unsigned char)R;
+                *pDstCur++ = (unsigned char)G;
+                *pDstCur++ = (unsigned char)B;
+            }
+
+            pCurY++;
+            if (w%2) pCurUV += 2;
+        }
+    }
+
+    return;
+}
+
 static Mat from_yuv420sp(const unsigned char* yuv, int w, int h, int stride)
 {
     unsigned int i,j;
@@ -424,7 +948,7 @@ static Mat from_yuv420sp(const unsigned char* yuv, int w, int h, int stride)
     {
         const unsigned char *pCurY = yuv + (i<<1)*stride;
         const unsigned char *pCurUV = uv + i*2*dstw;
-        unsigned char*pDstCur = pDst + 3*dstw;
+        unsigned char*pDstCur = pDst + i*3*dstw;
 
         for( j = 0; j < dstw; j += 16)
         {
