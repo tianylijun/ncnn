@@ -410,18 +410,16 @@ static void to_rgba(const Mat& m, unsigned char* rgba)
 |R|   | 298    0     409 | | Y - 16  |
 |G| = | 298  -100   -208 | | U - 128 |
 |B|   | 298   516     0  | | V - 128 |
-
 R = (298*(Y-16)+409*(V-128)+128)>>8
 G = (298*(Y-16)-100*(U-128)-208*(V-128)+128)>>8
 B = (298*(Y-16)+516*(U-128)+128)>>8
-
 Y = (( 66 * R + 129 * G +  25 * B + 128) >> 8) +  16
 U = ((-38 * R -  74 * G + 112 * B + 128) >> 8) + 128
 V = ((112 * R -  94 * G -  18 * B + 128) >> 8) + 128
 */
-void from_nv122rgb(const unsigned char* yuv, unsigned w, unsigned h, unsigned stride, unsigned roiX, unsigned roiY, unsigned roiW, unsigned roiH, unsigned char* pDst, unsigned bgrFlag)
+void from_nv122rgb(const unsigned char* yuv, unsigned w, unsigned h, unsigned stride, unsigned roiX, unsigned roiY, unsigned roiW, unsigned roiH, unsigned char* pDst, unsigned bgrFlag, unsigned num_threads)
 {
-    unsigned i = 0, j = 0;
+    unsigned j = 0;
     unsigned roiWDiv16, roiWHas8, roiWLeft;
     unsigned offsetH = 0, offsetW = 0;
     //printf("[%d %d %d   %d %d %d %d   %d]\n", w, h, stride, roiX, roiY, roiW, roiH, bgrFlag);
@@ -440,15 +438,16 @@ void from_nv122rgb(const unsigned char* yuv, unsigned w, unsigned h, unsigned st
     int16x8_t vsrc16x8_16  = vdupq_n_s16(16);
     int16x8_t vsrc16x8_128 = vdupq_n_s16(128);
     int32x4_t vsrc32x4_128 = vdupq_n_s32(128);
-    int32x4_t vsrc32x4_0   = vdupq_n_s32(0);
-    int32x4_t vsrc32x4_255 = vdupq_n_s32(255);
+    int16x8_t vsrc16x8_0   = vdupq_n_s16(0);
+    int16x8_t vsrc16x8_255 = vdupq_n_s16(255);
 
-    //#pragma omp parallel for
+    #pragma omp parallel for num_threads(num_threads)
     for( j = 0; j < roiH; j++)
     {
         const unsigned char *pCurY  = y + j*stride;
         const unsigned char *pCurUV = uv + ((j+offsetH)/2)*stride;
         unsigned char *pDstCur      = pDst + j*roiW*3;
+        unsigned i;
 
         if (offsetW) //odd point process separate
         {
@@ -457,17 +456,17 @@ void from_nv122rgb(const unsigned char* yuv, unsigned w, unsigned h, unsigned st
             U = ((int32_t)*pCurUV) - 128;
             V = ((int32_t)*(pCurUV+1)) - 128;
 
-            Y298 = 298*Y;
-            R = (Y298 + 409*(V) + 128)>>8;
-            G = (Y298 - 100*(U) - 208*(V)+128)>>8;
-            B = (Y298 + 516*(U) + 128)>>8;
+            Y298 = 298*Y+128;
+            R = (Y298 + 409*(V))>>8;
+            G = (Y298 - 100*(U) - 208*(V))>>8;
+            B = (Y298 + 516*(U))>>8;
 
             if (R < 0) R = 0;
-            if (R > 255) R = 255;
+            else if (R > 255) R = 255;
             if (G < 0) G = 0;
-            if (G > 255) G = 255;
+            else if (G > 255) G = 255;
             if (B < 0) B = 0;
-            if (B > 255) B = 255;
+            else if (B > 255) B = 255;
 
             if (bgrFlag)
             {
@@ -492,12 +491,7 @@ void from_nv122rgb(const unsigned char* yuv, unsigned w, unsigned h, unsigned st
             int32x4x3_t vsrc32x4x3_1; // HIGH RGB
 
             vsrc32x4x3_0.val[0] = vsrc32x4_128; //R
-            //vsrc32x4x3_0.val[1] = vsrc32x4_128; //G
-            //vsrc32x4x3_0.val[2] = vsrc32x4_128; //B
-
             vsrc32x4x3_1.val[0] = vsrc32x4_128; //R
-            //vsrc32x4x3_1.val[1] = vsrc32x4_128; //G
-            //vsrc32x4x3_1.val[2] = vsrc32x4_128; //B
 
             uint8x8_t  vsrc8x8_y    = vld1_u8(pCurY); // [y0y1y2y3y4y5y6u7]
             uint16x8_t vsrc16x8_y_u = vmovl_u8(vsrc8x8_y);
@@ -527,17 +521,13 @@ void from_nv122rgb(const unsigned char* yuv, unsigned w, unsigned h, unsigned st
             vsrc32x4x3_0.val[0] = vmlal_n_s16(vsrc32x4x3_0.val[0], vget_low_s16(vsrc16x8_v),  409);
             vsrc32x4x3_1.val[0] = vmlal_n_s16(vsrc32x4x3_1.val[0], vget_high_s16(vsrc16x8_v), 409);
             //G G = (298*(Y-16)-100*(U-128)-208*(V-128)+128)>>8
-            //vsrc32x4x3_0.val[1] = vsrc32x4x3_0.val[0]; //vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_y),  298);
-            //vsrc32x4x3_1.val[1] = vsrc32x4x3_1.val[0]; //vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_y), 298);
 
             vsrc32x4x3_0.val[1] = vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_u),  -100);
             vsrc32x4x3_1.val[1] = vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_u), -100);
 
             vsrc32x4x3_0.val[1] = vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_v),  -208);
             vsrc32x4x3_1.val[1] = vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_v), -208);
-            //B B = (298*(Y-16)+516*(U-128)+128)>>8
-            //vsrc32x4x3_0.val[2] = vsrc32x4x3_0.val[0]; //vmlal_n_s16(vsrc32x4x3_0.val[2], vget_low_s16(vsrc16x8_y),  298);
-            //vsrc32x4x3_1.val[2] = vsrc32x4x3_1.val[0]; //vmlal_n_s16(vsrc32x4x3_1.val[2], vget_high_s16(vsrc16x8_y), 298);
+            //B B = (298*(Y-16)+516*(U-128)+128)>>8s
 
             vsrc32x4x3_0.val[2] = vmlal_n_s16(vsrc32x4x3_0.val[2], vget_low_s16(vsrc16x8_u),  516);
             vsrc32x4x3_1.val[2] = vmlal_n_s16(vsrc32x4x3_1.val[2], vget_high_s16(vsrc16x8_u), 516);
@@ -552,71 +542,59 @@ void from_nv122rgb(const unsigned char* yuv, unsigned w, unsigned h, unsigned st
             vsrc32x4x3_0.val[2] = vshrq_n_s32(vsrc32x4x3_0.val[2], 8);
             vsrc32x4x3_1.val[2] = vshrq_n_s32(vsrc32x4x3_1.val[2], 8);
 
-            uint32x4_t mask;
+            int16x4_t vTmp16x4_0 = vmovn_s32(vsrc32x4x3_0.val[0]);
+            int16x4_t vTmp16x4_1 = vmovn_s32(vsrc32x4x3_1.val[0]);
+            int16x8_t vR16x8 = vcombine_s16(vTmp16x4_0, vTmp16x4_1);
 
-            mask = vcltq_s32(vsrc32x4x3_0.val[0], vsrc32x4_255);
-            vsrc32x4x3_0.val[0]  = vbslq_s32(mask, vsrc32x4x3_0.val[0], vsrc32x4_255);
-            mask = vcltq_s32(vsrc32x4x3_1.val[0], vsrc32x4_255);
-            vsrc32x4x3_1.val[0]  = vbslq_s32(mask, vsrc32x4x3_1.val[0], vsrc32x4_255);
+            vTmp16x4_0 = vmovn_s32(vsrc32x4x3_0.val[1]);
+            vTmp16x4_1 = vmovn_s32(vsrc32x4x3_1.val[1]);
+            int16x8_t vG16x8 = vcombine_s16(vTmp16x4_0, vTmp16x4_1);
 
-            mask = vcltq_s32(vsrc32x4x3_0.val[1], vsrc32x4_255);
-            vsrc32x4x3_0.val[1]  = vbslq_s32(mask, vsrc32x4x3_0.val[1], vsrc32x4_255);
-            mask = vcltq_s32(vsrc32x4x3_1.val[1], vsrc32x4_255);
-            vsrc32x4x3_1.val[1]  = vbslq_s32(mask, vsrc32x4x3_1.val[1], vsrc32x4_255);
+            vTmp16x4_0 = vmovn_s32(vsrc32x4x3_0.val[2]);
+            vTmp16x4_1 = vmovn_s32(vsrc32x4x3_1.val[2]);
+            int16x8_t vB16x8 = vcombine_s16(vTmp16x4_0, vTmp16x4_1);
 
-            mask = vcltq_s32(vsrc32x4x3_0.val[2], vsrc32x4_255);
-            vsrc32x4x3_0.val[2]  = vbslq_s32(mask, vsrc32x4x3_0.val[2], vsrc32x4_255);
-            mask = vcltq_s32(vsrc32x4x3_1.val[2], vsrc32x4_255);
-            vsrc32x4x3_1.val[2]  = vbslq_s32(mask, vsrc32x4x3_1.val[2], vsrc32x4_255);
+            uint16x8_t mask;
 
-            mask = vcgtq_s32(vsrc32x4x3_0.val[0], vsrc32x4_0);
-            vsrc32x4x3_0.val[0]  = vbslq_s32(mask, vsrc32x4x3_0.val[0], vsrc32x4_0);
-            mask = vcgtq_s32(vsrc32x4x3_1.val[0], vsrc32x4_0);
-            vsrc32x4x3_1.val[0]  = vbslq_s32(mask, vsrc32x4x3_1.val[0], vsrc32x4_0);
+            mask = vcltq_s16(vR16x8, vsrc16x8_255);
+            vR16x8  = vbslq_s16(mask, vR16x8, vsrc16x8_255);
 
-            mask = vcgtq_s32(vsrc32x4x3_0.val[1], vsrc32x4_0);
-            vsrc32x4x3_0.val[1]  = vbslq_s32(mask, vsrc32x4x3_0.val[1], vsrc32x4_0);
-            mask = vcgtq_s32(vsrc32x4x3_1.val[1], vsrc32x4_0);
-            vsrc32x4x3_1.val[1]  = vbslq_s32(mask, vsrc32x4x3_1.val[1], vsrc32x4_0);
+            mask = vcltq_s16(vG16x8, vsrc16x8_255);
+            vG16x8  = vbslq_s16(mask, vG16x8, vsrc16x8_255);
 
-            mask = vcgtq_s32(vsrc32x4x3_0.val[2], vsrc32x4_0);
-            vsrc32x4x3_0.val[2]  = vbslq_s32(mask, vsrc32x4x3_0.val[2], vsrc32x4_0);
-            mask = vcgtq_s32(vsrc32x4x3_1.val[2], vsrc32x4_0);
-            vsrc32x4x3_1.val[2]  = vbslq_s32(mask, vsrc32x4x3_1.val[2], vsrc32x4_0);
+            mask = vcltq_s16(vB16x8, vsrc16x8_255);
+            vB16x8  = vbslq_s16(mask, vB16x8, vsrc16x8_255);
+
+            mask = vcgtq_s16(vR16x8, vsrc16x8_0);
+            vR16x8  = vbslq_s16(mask, vR16x8, vsrc16x8_0);
+
+            mask = vcgtq_s16(vG16x8, vsrc16x8_0);
+            vG16x8  = vbslq_s16(mask, vG16x8, vsrc16x8_0);
+
+            mask = vcgtq_s16(vB16x8, vsrc16x8_0);
+            vB16x8  = vbslq_s16(mask, vB16x8, vsrc16x8_0);
 
             //narrow 32 to 8
             uint8x8x3_t vRet8x8x3;
-            uint32x4x3_t vsrc32x4x3_u_0, vsrc32x4x3_u_1;
-            vsrc32x4x3_u_0.val[0] = vreinterpretq_u32_s32(vsrc32x4x3_0.val[0]);
-            vsrc32x4x3_u_0.val[1] = vreinterpretq_u32_s32(vsrc32x4x3_0.val[1]);
-            vsrc32x4x3_u_0.val[2] = vreinterpretq_u32_s32(vsrc32x4x3_0.val[2]);
-            vsrc32x4x3_u_1.val[0] = vreinterpretq_u32_s32(vsrc32x4x3_1.val[0]);
-            vsrc32x4x3_u_1.val[1] = vreinterpretq_u32_s32(vsrc32x4x3_1.val[1]);
-            vsrc32x4x3_u_1.val[2] = vreinterpretq_u32_s32(vsrc32x4x3_1.val[2]);
+            uint16x8x3_t vsrc16x8x3;
+            vsrc16x8x3.val[0] = vreinterpretq_u16_s16(vR16x8);
+            vsrc16x8x3.val[1] = vreinterpretq_u16_s16(vG16x8);
+            vsrc16x8x3.val[2] = vreinterpretq_u16_s16(vB16x8);
 
             //R
-            uint16x4_t vR16x4_0 = vmovn_u32(vsrc32x4x3_u_0.val[0]);
-            uint16x4_t vR16x4_1 = vmovn_u32(vsrc32x4x3_u_1.val[0]);
-            uint16x8_t vR16x8   = vcombine_u16(vR16x4_0, vR16x4_1);
             if (bgrFlag)
-                vRet8x8x3.val[2] = vmovn_u16(vR16x8);
+                vRet8x8x3.val[2] = vmovn_u16(vsrc16x8x3.val[0]);
             else
-                vRet8x8x3.val[0] = vmovn_u16(vR16x8);
+                vRet8x8x3.val[0] = vmovn_u16(vsrc16x8x3.val[0]);
 
             //G
-            uint16x4_t vG16x4_0 = vmovn_u32(vsrc32x4x3_u_0.val[1]);
-            uint16x4_t vG16x4_1 = vmovn_u32(vsrc32x4x3_u_1.val[1]);
-            uint16x8_t vG16x8   = vcombine_u16(vG16x4_0, vG16x4_1);
-            vRet8x8x3.val[1]    = vmovn_u16(vG16x8);
+            vRet8x8x3.val[1]    = vmovn_u16(vsrc16x8x3.val[1]);
 
             //B
-            uint16x4_t vB16x4_0 = vmovn_u32(vsrc32x4x3_u_0.val[2]);
-            uint16x4_t vB16x4_1 = vmovn_u32(vsrc32x4x3_u_1.val[2]);
-            uint16x8_t vB16x8   = vcombine_u16(vB16x4_0, vB16x4_1);
             if (bgrFlag)
-                vRet8x8x3.val[0] = vmovn_u16(vB16x8);
+                vRet8x8x3.val[0] = vmovn_u16(vsrc16x8x3.val[2]);
             else
-                vRet8x8x3.val[2] = vmovn_u16(vB16x8);
+                vRet8x8x3.val[2] = vmovn_u16(vsrc16x8x3.val[2]);
 
             vst3_u8(pDstCur, vRet8x8x3);
             pDstCur += 24;
@@ -624,12 +602,8 @@ void from_nv122rgb(const unsigned char* yuv, unsigned w, unsigned h, unsigned st
 
             //next 8 elements
             vsrc32x4x3_0.val[0] = vsrc32x4_128; //R
-            //vsrc32x4x3_0.val[1] = vsrc32x4_128; //G
-            //vsrc32x4x3_0.val[2] = vsrc32x4_128; //B
 
             vsrc32x4x3_1.val[0] = vsrc32x4_128; //R
-            //vsrc32x4x3_1.val[1] = vsrc32x4_128; //G
-            //vsrc32x4x3_1.val[2] = vsrc32x4_128; //B
 
             vsrc8x8_y    = vld1_u8(pCurY); // [y8y9y10y11y12y13y14u15]
             vsrc16x8_y_u = vmovl_u8(vsrc8x8_y);
@@ -657,8 +631,6 @@ void from_nv122rgb(const unsigned char* yuv, unsigned w, unsigned h, unsigned st
             vsrc32x4x3_0.val[0] = vmlal_n_s16(vsrc32x4x3_0.val[0], vget_low_s16(vsrc16x8_v),  409);
             vsrc32x4x3_1.val[0] = vmlal_n_s16(vsrc32x4x3_1.val[0], vget_high_s16(vsrc16x8_v), 409);
             //G
-            //vsrc32x4x3_0.val[1] = vsrc32x4x3_0.val[0]; //vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_y),  298);
-            //vsrc32x4x3_1.val[1] = vsrc32x4x3_1.val[0]; //vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_y), 298);
 
             vsrc32x4x3_0.val[1] = vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_u),  -100);
             vsrc32x4x3_1.val[1] = vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_u), -100);
@@ -666,8 +638,6 @@ void from_nv122rgb(const unsigned char* yuv, unsigned w, unsigned h, unsigned st
             vsrc32x4x3_0.val[1] = vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_v),  -208);
             vsrc32x4x3_1.val[1] = vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_v), -208);
             //B
-            //vsrc32x4x3_0.val[2] = vsrc32x4x3_0.val[0]; //vmlal_n_s16(vsrc32x4x3_0.val[2], vget_low_s16(vsrc16x8_y),  298);
-            //vsrc32x4x3_1.val[2] = vsrc32x4x3_1.val[0]; //vmlal_n_s16(vsrc32x4x3_1.val[2], vget_high_s16(vsrc16x8_y), 298);
 
             vsrc32x4x3_0.val[2] = vmlal_n_s16(vsrc32x4x3_0.val[2], vget_low_s16(vsrc16x8_u),  516);
             vsrc32x4x3_1.val[2] = vmlal_n_s16(vsrc32x4x3_1.val[2], vget_high_s16(vsrc16x8_u), 516);
@@ -682,69 +652,58 @@ void from_nv122rgb(const unsigned char* yuv, unsigned w, unsigned h, unsigned st
             vsrc32x4x3_0.val[2] = vshrq_n_s32(vsrc32x4x3_0.val[2], 8);
             vsrc32x4x3_1.val[2] = vshrq_n_s32(vsrc32x4x3_1.val[2], 8);
 
-            mask = vcltq_s32(vsrc32x4x3_0.val[0], vsrc32x4_255);
-            vsrc32x4x3_0.val[0]  = vbslq_s32(mask, vsrc32x4x3_0.val[0], vsrc32x4_255);
-            mask = vcltq_s32(vsrc32x4x3_1.val[0], vsrc32x4_255);
-            vsrc32x4x3_1.val[0]  = vbslq_s32(mask, vsrc32x4x3_1.val[0], vsrc32x4_255);
+            vTmp16x4_0 = vmovn_s32(vsrc32x4x3_0.val[0]);
+            vTmp16x4_1 = vmovn_s32(vsrc32x4x3_1.val[0]);
+            vR16x8 = vcombine_s16(vTmp16x4_0, vTmp16x4_1);
 
-            mask = vcltq_s32(vsrc32x4x3_0.val[1], vsrc32x4_255);
-            vsrc32x4x3_0.val[1]  = vbslq_s32(mask, vsrc32x4x3_0.val[1], vsrc32x4_255);
-            mask = vcltq_s32(vsrc32x4x3_1.val[1], vsrc32x4_255);
-            vsrc32x4x3_1.val[1]  = vbslq_s32(mask, vsrc32x4x3_1.val[1], vsrc32x4_255);
+            vTmp16x4_0 = vmovn_s32(vsrc32x4x3_0.val[1]);
+            vTmp16x4_1 = vmovn_s32(vsrc32x4x3_1.val[1]);
+            vG16x8 = vcombine_s16(vTmp16x4_0, vTmp16x4_1);
 
-            mask = vcltq_s32(vsrc32x4x3_0.val[2], vsrc32x4_255);
-            vsrc32x4x3_0.val[2]  = vbslq_s32(mask, vsrc32x4x3_0.val[2], vsrc32x4_255);
-            mask = vcltq_s32(vsrc32x4x3_1.val[2], vsrc32x4_255);
-            vsrc32x4x3_1.val[2]  = vbslq_s32(mask, vsrc32x4x3_1.val[2], vsrc32x4_255);
+            vTmp16x4_0 = vmovn_s32(vsrc32x4x3_0.val[2]);
+            vTmp16x4_1 = vmovn_s32(vsrc32x4x3_1.val[2]);
+            vB16x8 = vcombine_s16(vTmp16x4_0, vTmp16x4_1);
 
-            mask = vcgtq_s32(vsrc32x4x3_0.val[0], vsrc32x4_0);
-            vsrc32x4x3_0.val[0]  = vbslq_s32(mask, vsrc32x4x3_0.val[0], vsrc32x4_0);
-            mask = vcgtq_s32(vsrc32x4x3_1.val[0], vsrc32x4_0);
-            vsrc32x4x3_1.val[0]  = vbslq_s32(mask, vsrc32x4x3_1.val[0], vsrc32x4_0);
+            mask = vcltq_s16(vR16x8, vsrc16x8_255);
+            vR16x8  = vbslq_s16(mask, vR16x8, vsrc16x8_255);
 
-            mask = vcgtq_s32(vsrc32x4x3_0.val[1], vsrc32x4_0);
-            vsrc32x4x3_0.val[1]  = vbslq_s32(mask, vsrc32x4x3_0.val[1], vsrc32x4_0);
-            mask = vcgtq_s32(vsrc32x4x3_1.val[1], vsrc32x4_0);
-            vsrc32x4x3_1.val[1]  = vbslq_s32(mask, vsrc32x4x3_1.val[1], vsrc32x4_0);
+            mask = vcltq_s16(vG16x8, vsrc16x8_255);
+            vG16x8  = vbslq_s16(mask, vG16x8, vsrc16x8_255);
 
-            mask = vcgtq_s32(vsrc32x4x3_0.val[2], vsrc32x4_0);
-            vsrc32x4x3_0.val[2]  = vbslq_s32(mask, vsrc32x4x3_0.val[2], vsrc32x4_0);
-            mask = vcgtq_s32(vsrc32x4x3_1.val[2], vsrc32x4_0);
-            vsrc32x4x3_1.val[2]  = vbslq_s32(mask, vsrc32x4x3_1.val[2], vsrc32x4_0);
+            mask = vcltq_s16(vB16x8, vsrc16x8_255);
+            vB16x8  = vbslq_s16(mask, vB16x8, vsrc16x8_255);
+
+            mask = vcgtq_s16(vR16x8, vsrc16x8_0);
+            vR16x8  = vbslq_s16(mask, vR16x8, vsrc16x8_0);
+
+            mask = vcgtq_s16(vG16x8, vsrc16x8_0);
+            vG16x8  = vbslq_s16(mask, vG16x8, vsrc16x8_0);
+
+            mask = vcgtq_s16(vB16x8, vsrc16x8_0);
+            vB16x8  = vbslq_s16(mask, vB16x8, vsrc16x8_0);
 
             //narrow 32 to 8
-            vsrc32x4x3_u_0.val[0] = vreinterpretq_u32_s32(vsrc32x4x3_0.val[0]);
-            vsrc32x4x3_u_0.val[1] = vreinterpretq_u32_s32(vsrc32x4x3_0.val[1]);
-            vsrc32x4x3_u_0.val[2] = vreinterpretq_u32_s32(vsrc32x4x3_0.val[2]);
-            vsrc32x4x3_u_1.val[0] = vreinterpretq_u32_s32(vsrc32x4x3_1.val[0]);
-            vsrc32x4x3_u_1.val[1] = vreinterpretq_u32_s32(vsrc32x4x3_1.val[1]);
-            vsrc32x4x3_u_1.val[2] = vreinterpretq_u32_s32(vsrc32x4x3_1.val[2]);
+            vsrc16x8x3.val[0] = vreinterpretq_u16_s16(vR16x8);
+            vsrc16x8x3.val[1] = vreinterpretq_u16_s16(vG16x8);
+            vsrc16x8x3.val[2] = vreinterpretq_u16_s16(vB16x8);
 
             //R
-            vR16x4_0 = vmovn_u32(vsrc32x4x3_u_0.val[0]);
-            vR16x4_1 = vmovn_u32(vsrc32x4x3_u_1.val[0]);
-            vR16x8   = vcombine_u16(vR16x4_0, vR16x4_1);
             if (bgrFlag)
-                vRet8x8x3.val[2] = vmovn_u16(vR16x8);
+                vRet8x8x3.val[2] = vmovn_u16(vsrc16x8x3.val[0]);
             else
-                vRet8x8x3.val[0] = vmovn_u16(vR16x8);
+                vRet8x8x3.val[0] = vmovn_u16(vsrc16x8x3.val[0]);
 
             //G
-            vG16x4_0 = vmovn_u32(vsrc32x4x3_u_0.val[1]);
-            vG16x4_1 = vmovn_u32(vsrc32x4x3_u_1.val[1]);
-            vG16x8   = vcombine_u16(vG16x4_0, vG16x4_1);
-            vRet8x8x3.val[1]    = vmovn_u16(vG16x8);
+            vRet8x8x3.val[1]    = vmovn_u16(vsrc16x8x3.val[1]);
 
             //B
-            vB16x4_0 = vmovn_u32(vsrc32x4x3_u_0.val[2]);
-            vB16x4_1 = vmovn_u32(vsrc32x4x3_u_1.val[2]);
-            vB16x8   = vcombine_u16(vB16x4_0, vB16x4_1);
             if (bgrFlag)
-                vRet8x8x3.val[0] = vmovn_u16(vB16x8);
+                vRet8x8x3.val[0] = vmovn_u16(vsrc16x8x3.val[2]);
             else
-                vRet8x8x3.val[2] = vmovn_u16(vB16x8);
+                vRet8x8x3.val[2] = vmovn_u16(vsrc16x8x3.val[2]);
 
             vst3_u8(pDstCur, vRet8x8x3);
+
             pDstCur += 24;
             pCurY += 8;
             pCurUV += 16;
@@ -756,12 +715,8 @@ void from_nv122rgb(const unsigned char* yuv, unsigned w, unsigned h, unsigned st
             int32x4x3_t vsrc32x4x3_1; // HIGH RGB
 
             vsrc32x4x3_0.val[0] = vsrc32x4_128; //R
-            //vsrc32x4x3_0.val[1] = vsrc32x4_128; //G
-            //vsrc32x4x3_0.val[2] = vsrc32x4_128; //B
 
             vsrc32x4x3_1.val[0] = vsrc32x4_128; //R
-            //vsrc32x4x3_1.val[1] = vsrc32x4_128; //G
-            //vsrc32x4x3_1.val[2] = vsrc32x4_128; //B
 
             uint8x8_t  vsrc8x8_y    = vld1_u8(pCurY); // [y0y1y2y3y4y5y6u7]
             uint16x8_t vsrc16x8_y_u = vmovl_u8(vsrc8x8_y);
@@ -790,18 +745,12 @@ void from_nv122rgb(const unsigned char* yuv, unsigned w, unsigned h, unsigned st
 
             vsrc32x4x3_0.val[0] = vmlal_n_s16(vsrc32x4x3_0.val[0], vget_low_s16(vsrc16x8_v),  409);
             vsrc32x4x3_1.val[0] = vmlal_n_s16(vsrc32x4x3_1.val[0], vget_high_s16(vsrc16x8_v), 409);
-            //G G = (298*(Y-16)-100*(U-128)-208*(V-128)+128)>>8
-            //vsrc32x4x3_0.val[1] = vsrc32x4x3_0.val[0]; //vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_y),  298);
-            //vsrc32x4x3_1.val[1] = vsrc32x4x3_1.val[0]; //vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_y), 298);
 
             vsrc32x4x3_0.val[1] = vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_u),  -100);
             vsrc32x4x3_1.val[1] = vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_u), -100);
 
             vsrc32x4x3_0.val[1] = vmlal_n_s16(vsrc32x4x3_0.val[1], vget_low_s16(vsrc16x8_v),  -208);
             vsrc32x4x3_1.val[1] = vmlal_n_s16(vsrc32x4x3_1.val[1], vget_high_s16(vsrc16x8_v), -208);
-            //B B = (298*(Y-16)+516*(U-128)+128)>>8
-            //vsrc32x4x3_0.val[2] = vsrc32x4x3_0.val[0]; //vmlal_n_s16(vsrc32x4x3_0.val[2], vget_low_s16(vsrc16x8_y),  298);
-            //vsrc32x4x3_1.val[2] = vsrc32x4x3_1.val[0]; //vmlal_n_s16(vsrc32x4x3_1.val[2], vget_high_s16(vsrc16x8_y), 298);
 
             vsrc32x4x3_0.val[2] = vmlal_n_s16(vsrc32x4x3_0.val[2], vget_low_s16(vsrc16x8_u),  516);
             vsrc32x4x3_1.val[2] = vmlal_n_s16(vsrc32x4x3_1.val[2], vget_high_s16(vsrc16x8_u), 516);
@@ -816,71 +765,59 @@ void from_nv122rgb(const unsigned char* yuv, unsigned w, unsigned h, unsigned st
             vsrc32x4x3_0.val[2] = vshrq_n_s32(vsrc32x4x3_0.val[2], 8);
             vsrc32x4x3_1.val[2] = vshrq_n_s32(vsrc32x4x3_1.val[2], 8);
 
-            uint32x4_t mask;
+            int16x4_t vTmp16x4_0 = vmovn_s32(vsrc32x4x3_0.val[0]);
+            int16x4_t vTmp16x4_1 = vmovn_s32(vsrc32x4x3_1.val[0]);
+            int16x8_t vR16x8 = vcombine_s16(vTmp16x4_0, vTmp16x4_1);
 
-            mask = vcltq_s32(vsrc32x4x3_0.val[0], vsrc32x4_255);
-            vsrc32x4x3_0.val[0]  = vbslq_s32(mask, vsrc32x4x3_0.val[0], vsrc32x4_255);
-            mask = vcltq_s32(vsrc32x4x3_1.val[0], vsrc32x4_255);
-            vsrc32x4x3_1.val[0]  = vbslq_s32(mask, vsrc32x4x3_1.val[0], vsrc32x4_255);
+            vTmp16x4_0 = vmovn_s32(vsrc32x4x3_0.val[1]);
+            vTmp16x4_1 = vmovn_s32(vsrc32x4x3_1.val[1]);
+            int16x8_t vG16x8 = vcombine_s16(vTmp16x4_0, vTmp16x4_1);
 
-            mask = vcltq_s32(vsrc32x4x3_0.val[1], vsrc32x4_255);
-            vsrc32x4x3_0.val[1]  = vbslq_s32(mask, vsrc32x4x3_0.val[1], vsrc32x4_255);
-            mask = vcltq_s32(vsrc32x4x3_1.val[1], vsrc32x4_255);
-            vsrc32x4x3_1.val[1]  = vbslq_s32(mask, vsrc32x4x3_1.val[1], vsrc32x4_255);
+            vTmp16x4_0 = vmovn_s32(vsrc32x4x3_0.val[2]);
+            vTmp16x4_1 = vmovn_s32(vsrc32x4x3_1.val[2]);
+            int16x8_t vB16x8 = vcombine_s16(vTmp16x4_0, vTmp16x4_1);
 
-            mask = vcltq_s32(vsrc32x4x3_0.val[2], vsrc32x4_255);
-            vsrc32x4x3_0.val[2]  = vbslq_s32(mask, vsrc32x4x3_0.val[2], vsrc32x4_255);
-            mask = vcltq_s32(vsrc32x4x3_1.val[2], vsrc32x4_255);
-            vsrc32x4x3_1.val[2]  = vbslq_s32(mask, vsrc32x4x3_1.val[2], vsrc32x4_255);
+            uint16x8_t mask;
 
-            mask = vcgtq_s32(vsrc32x4x3_0.val[0], vsrc32x4_0);
-            vsrc32x4x3_0.val[0]  = vbslq_s32(mask, vsrc32x4x3_0.val[0], vsrc32x4_0);
-            mask = vcgtq_s32(vsrc32x4x3_1.val[0], vsrc32x4_0);
-            vsrc32x4x3_1.val[0]  = vbslq_s32(mask, vsrc32x4x3_1.val[0], vsrc32x4_0);
+            mask = vcltq_s16(vR16x8, vsrc16x8_255);
+            vR16x8  = vbslq_s16(mask, vR16x8, vsrc16x8_255);
 
-            mask = vcgtq_s32(vsrc32x4x3_0.val[1], vsrc32x4_0);
-            vsrc32x4x3_0.val[1]  = vbslq_s32(mask, vsrc32x4x3_0.val[1], vsrc32x4_0);
-            mask = vcgtq_s32(vsrc32x4x3_1.val[1], vsrc32x4_0);
-            vsrc32x4x3_1.val[1]  = vbslq_s32(mask, vsrc32x4x3_1.val[1], vsrc32x4_0);
+            mask = vcltq_s16(vG16x8, vsrc16x8_255);
+            vG16x8  = vbslq_s16(mask, vG16x8, vsrc16x8_255);
 
-            mask = vcgtq_s32(vsrc32x4x3_0.val[2], vsrc32x4_0);
-            vsrc32x4x3_0.val[2]  = vbslq_s32(mask, vsrc32x4x3_0.val[2], vsrc32x4_0);
-            mask = vcgtq_s32(vsrc32x4x3_1.val[2], vsrc32x4_0);
-            vsrc32x4x3_1.val[2]  = vbslq_s32(mask, vsrc32x4x3_1.val[2], vsrc32x4_0);
+            mask = vcltq_s16(vB16x8, vsrc16x8_255);
+            vB16x8  = vbslq_s16(mask, vB16x8, vsrc16x8_255);
+
+            mask = vcgtq_s16(vR16x8, vsrc16x8_0);
+            vR16x8  = vbslq_s16(mask, vR16x8, vsrc16x8_0);
+
+            mask = vcgtq_s16(vG16x8, vsrc16x8_0);
+            vG16x8  = vbslq_s16(mask, vG16x8, vsrc16x8_0);
+
+            mask = vcgtq_s16(vB16x8, vsrc16x8_0);
+            vB16x8  = vbslq_s16(mask, vB16x8, vsrc16x8_0);
 
             //narrow 32 to 8
             uint8x8x3_t vRet8x8x3;
-            uint32x4x3_t vsrc32x4x3_u_0, vsrc32x4x3_u_1;
-            vsrc32x4x3_u_0.val[0] = vreinterpretq_u32_s32(vsrc32x4x3_0.val[0]);
-            vsrc32x4x3_u_0.val[1] = vreinterpretq_u32_s32(vsrc32x4x3_0.val[1]);
-            vsrc32x4x3_u_0.val[2] = vreinterpretq_u32_s32(vsrc32x4x3_0.val[2]);
-            vsrc32x4x3_u_1.val[0] = vreinterpretq_u32_s32(vsrc32x4x3_1.val[0]);
-            vsrc32x4x3_u_1.val[1] = vreinterpretq_u32_s32(vsrc32x4x3_1.val[1]);
-            vsrc32x4x3_u_1.val[2] = vreinterpretq_u32_s32(vsrc32x4x3_1.val[2]);
+            uint16x8x3_t vsrc16x8x3;
+            vsrc16x8x3.val[0] = vreinterpretq_u16_s16(vR16x8);
+            vsrc16x8x3.val[1] = vreinterpretq_u16_s16(vG16x8);
+            vsrc16x8x3.val[2] = vreinterpretq_u16_s16(vB16x8);
 
             //R
-            uint16x4_t vR16x4_0 = vmovn_u32(vsrc32x4x3_u_0.val[0]);
-            uint16x4_t vR16x4_1 = vmovn_u32(vsrc32x4x3_u_1.val[0]);
-            uint16x8_t vR16x8   = vcombine_u16(vR16x4_0, vR16x4_1);
             if (bgrFlag)
-                vRet8x8x3.val[2] = vmovn_u16(vR16x8);
+                vRet8x8x3.val[2] = vmovn_u16(vsrc16x8x3.val[0]);
             else
-                vRet8x8x3.val[0] = vmovn_u16(vR16x8);
+                vRet8x8x3.val[0] = vmovn_u16(vsrc16x8x3.val[0]);
 
             //G
-            uint16x4_t vG16x4_0 = vmovn_u32(vsrc32x4x3_u_0.val[1]);
-            uint16x4_t vG16x4_1 = vmovn_u32(vsrc32x4x3_u_1.val[1]);
-            uint16x8_t vG16x8   = vcombine_u16(vG16x4_0, vG16x4_1);
-            vRet8x8x3.val[1]    = vmovn_u16(vG16x8);
+            vRet8x8x3.val[1]    = vmovn_u16(vsrc16x8x3.val[1]);
 
             //B
-            uint16x4_t vB16x4_0 = vmovn_u32(vsrc32x4x3_u_0.val[2]);
-            uint16x4_t vB16x4_1 = vmovn_u32(vsrc32x4x3_u_1.val[2]);
-            uint16x8_t vB16x8   = vcombine_u16(vB16x4_0, vB16x4_1);
             if (bgrFlag)
-                vRet8x8x3.val[0] = vmovn_u16(vB16x8);
+                vRet8x8x3.val[0] = vmovn_u16(vsrc16x8x3.val[2]);
             else
-                vRet8x8x3.val[2] = vmovn_u16(vB16x8);
+                vRet8x8x3.val[2] = vmovn_u16(vsrc16x8x3.val[2]);
 
             vst3_u8(pDstCur, vRet8x8x3);
 
@@ -889,17 +826,17 @@ void from_nv122rgb(const unsigned char* yuv, unsigned w, unsigned h, unsigned st
             pCurUV += 8;
         }
 
-        for( w = 0; w < roiWLeft; w++)
+        for( i = 0; i < roiWLeft; i++)
         {
             int Y, U, V, R, G, B, Y298;
             Y = ((int32_t)*pCurY) - 16;
             U = ((int32_t)*pCurUV) - 128;
             V = ((int32_t)*(pCurUV+1)) - 128;
 
-            Y298 = 298*(Y);
-            R = (Y298 + 409*(V) + 128)>>8;
-            G = (Y298 - 100*(U) - 208*(V) + 128)>>8;
-            B = (Y298 + 516*(U) + 128)>>8;
+            Y298 = 298*(Y) + 128;
+            R = (Y298 + 409*(V))>>8;
+            G = (Y298 - 100*(U) - 208*(V))>>8;
+            B = (Y298 + 516*(U))>>8;
 
             if (R < 0) R = 0;
             else if (R > 255) R = 255;
@@ -924,7 +861,7 @@ void from_nv122rgb(const unsigned char* yuv, unsigned w, unsigned h, unsigned st
             }
 
             pCurY++;
-            if (w%2) pCurUV += 2;
+            if (i%2) pCurUV += 2;
         }
     }
 
