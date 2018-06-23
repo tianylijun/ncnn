@@ -58,16 +58,17 @@ int main(int argc, char *argv[])
     {
         ex.input("data", in);
         int ret = ex.extract(pBlob, out);
-        printf("[%d] ret: %d dims: %d c: %d h: %d w: %d\n", loop, ret, out.dims, out.c, out.h, out.w);
+        printf("[%d] ret: %d cstep: %d total: %lu dims: %d c: %d h: %d w: %d\n", loop, ret, out.cstep, out.total(), out.dims, out.c, out.h, out.w);
     }
 
     gettimeofday(&end, NULL);
     printf("\ntime: %ld ms, avg time : %.3f ms, loop: %d thread:%d bigcore:%d\n\n", (end.tv_sec*1000000 + end.tv_usec - beg.tv_sec*1000000 - beg.tv_usec)/1000, (end.tv_sec*1000000 + end.tv_usec - beg.tv_sec*1000000 - beg.tv_usec)/(1000.0*loopCnt), loopCnt, num_threads, bigcore);
     for (unsigned i = 0; i < out.total(); i++)
     {
-        if ((0 != i)&& (0 == i % 16))
+        if ((0 != i)&& (0 == i % (16*out.cstep)))
             printf("\n");
-        printf("%9.6f ", out[i]);
+        if(0 == (i%out.cstep))
+            printf("%9.6f ", out[i]);
     }
     printf("\n");
     return 0;

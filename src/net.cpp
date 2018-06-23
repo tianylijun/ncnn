@@ -858,7 +858,7 @@ int Extractor::extract(const char* blob_name, Mat& feat)
 
     int ret = 0;
 
-    if (1)//(blob_mats[blob_index].dims == 0)
+    if (blob_mats[blob_index].dims == 0)
     {
         int layer_index = net->blobs[blob_index].producer;
 
